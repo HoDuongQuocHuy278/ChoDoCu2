@@ -222,5 +222,126 @@ class VNPayService
         curl_close($ch);
         return json_decode($result, true) ?? [];
     }
+
+    /**
+     * Hoàn tiền giao dịch (Refund)
+     * 
+     * @param array $params
+     * @return array
+     */
+    public function refund(array $params): array
+    {
+        $vnp_RequestId = $params['request_id'] ?? rand(1, 10000);
+        $vnp_Command = "refund";
+        $vnp_TransactionType = $params['transaction_type'] ?? '02'; // 02: hoàn toàn phần, 03: hoàn một phần
+        $vnp_TxnRef = $params['txn_ref']; // Mã tham chiếu giao dịch cần hoàn
+        $vnp_Amount = (int)($params['amount'] * 100); // Số tiền hoàn (tính bằng xu)
+        $vnp_OrderInfo = $params['order_info'] ?? 'Hoan tien giao dich';
+        $vnp_TransactionNo = $params['transaction_no'] ?? '0'; // Mã GD VNPay (0 nếu không có)
+        $vnp_TransactionDate = $params['transaction_date']; // Thời gian GD thanh toán (yyyyMMddHHmmss)
+        $vnp_CreateDate = date('YmdHis');
+        $vnp_CreateBy = $params['create_by'] ?? 'admin';
+        $vnp_IpAddr = $params['ip_address'] ?? request()->ip() ?? '127.0.0.1';
+
+        $requestData = [
+            "vnp_RequestId" => $vnp_RequestId,
+            "vnp_Version" => "2.1.0",
+            "vnp_Command" => $vnp_Command,
+            "vnp_TmnCode" => $this->vnp_TmnCode,
+            "vnp_TransactionType" => $vnp_TransactionType,
+            "vnp_TxnRef" => $vnp_TxnRef,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_TransactionNo" => $vnp_TransactionNo,
+            "vnp_TransactionDate" => $vnp_TransactionDate,
+            "vnp_CreateDate" => $vnp_CreateDate,
+            "vnp_CreateBy" => $vnp_CreateBy,
+            "vnp_IpAddr" => $vnp_IpAddr
+        ];
+
+        // Tạo chữ ký theo format của VNPay
+        $format = '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s';
+        $dataHash = sprintf(
+            $format,
+            $requestData['vnp_RequestId'],      // 1
+            $requestData['vnp_Version'],        // 2
+            $requestData['vnp_Command'],        // 3
+            $requestData['vnp_TmnCode'],        // 4
+            $requestData['vnp_TransactionType'], // 5
+            $requestData['vnp_TxnRef'],         // 6
+            $requestData['vnp_Amount'],         // 7
+            $requestData['vnp_TransactionNo'],  // 8
+            $requestData['vnp_TransactionDate'], // 9
+            $requestData['vnp_CreateBy'],      // 10
+            $requestData['vnp_CreateDate'],     // 11
+            $requestData['vnp_IpAddr'],         // 12
+            $requestData['vnp_OrderInfo']       // 13
+        );
+
+        $checksum = hash_hmac('SHA512', $dataHash, $this->vnp_HashSecret);
+        $requestData["vnp_SecureHash"] = $checksum;
+
+        Log::info('VNPay Refund Request', [
+            'txn_ref' => $vnp_TxnRef,
+            'amount' => $vnp_Amount,
+            'transaction_type' => $vnp_TransactionType,
+        ]);
+
+        return $this->callAPI('POST', '', $requestData);
+    }
+
+    /**
+     * Tra cứu giao dịch (Query Transaction)
+     * 
+     * @param array $params
+     * @return array
+     */
+    public function queryTransaction(array $params): array
+    {
+        $vnp_RequestId = $params['request_id'] ?? rand(1, 10000);
+        $vnp_Command = "querydr";
+        $vnp_TxnRef = $params['txn_ref']; // Mã tham chiếu giao dịch
+        $vnp_OrderInfo = $params['order_info'] ?? 'Query transaction';
+        $vnp_TransactionDate = $params['transaction_date']; // Thời gian GD (yyyyMMddHHmmss)
+        $vnp_CreateDate = date('YmdHis');
+        $vnp_IpAddr = $params['ip_address'] ?? request()->ip() ?? '127.0.0.1';
+
+        $requestData = [
+            "vnp_RequestId" => $vnp_RequestId,
+            "vnp_Version" => "2.1.0",
+            "vnp_Command" => $vnp_Command,
+            "vnp_TmnCode" => $this->vnp_TmnCode,
+            "vnp_TxnRef" => $vnp_TxnRef,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_TransactionDate" => $vnp_TransactionDate,
+            "vnp_CreateDate" => $vnp_CreateDate,
+            "vnp_IpAddr" => $vnp_IpAddr
+        ];
+
+        // Tạo chữ ký theo format của VNPay
+        $format = '%s|%s|%s|%s|%s|%s|%s|%s|%s';
+        $dataHash = sprintf(
+            $format,
+            $requestData['vnp_RequestId'],      // 1
+            $requestData['vnp_Version'],        // 2
+            $requestData['vnp_Command'],        // 3
+            $requestData['vnp_TmnCode'],        // 4
+            $requestData['vnp_TxnRef'],         // 5
+            $requestData['vnp_TransactionDate'], // 6
+            $requestData['vnp_CreateDate'],     // 7
+            $requestData['vnp_IpAddr'],         // 8
+            $requestData['vnp_OrderInfo']       // 9
+        );
+
+        $checksum = hash_hmac('SHA512', $dataHash, $this->vnp_HashSecret);
+        $requestData["vnp_SecureHash"] = $checksum;
+
+        Log::info('VNPay Query Transaction Request', [
+            'txn_ref' => $vnp_TxnRef,
+            'transaction_date' => $vnp_TransactionDate,
+        ]);
+
+        return $this->callAPI('POST', '', $requestData);
+    }
 }
 

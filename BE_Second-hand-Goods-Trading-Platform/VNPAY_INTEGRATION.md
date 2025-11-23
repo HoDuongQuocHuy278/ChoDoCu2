@@ -19,6 +19,8 @@ Hệ thống đã được tích hợp VNPay để xử lý thanh toán trực t
 - **Methods**:
   - `vnpay_payment()`: Tạo link thanh toán VNPay
   - `vnpayCallback()`: Xử lý callback từ VNPay sau thanh toán
+  - `vnpayRefund()`: Hoàn tiền giao dịch
+  - `vnpayQuery()`: Tra cứu giao dịch
 
 ### 3. Config
 - **File**: `config/vnpay.php`
@@ -29,6 +31,8 @@ Hệ thống đã được tích hợp VNPay để xử lý thanh toán trực t
 - Routes:
   - `POST /api/client/payment/vnpay`: Tạo thanh toán
   - `GET /api/client/payment/vnpay/callback`: Callback từ VNPay
+  - `POST /api/client/payment/vnpay/refund`: Hoàn tiền (yêu cầu auth)
+  - `POST /api/client/payment/vnpay/query`: Tra cứu giao dịch (yêu cầu auth)
 
 ### 5. View
 - **File**: `resources/views/vnpay_callback.blade.php`
@@ -134,6 +138,128 @@ Khi thanh toán thành công, Backend sẽ tự động:
 - Cập nhật `status` = `'processing'`
 - Lưu thông tin thanh toán vào `payment_payload`
 - Tạo thông báo cho buyer và seller
+
+## Hoàn tiền (Refund)
+
+### API Endpoint
+```
+POST /api/client/payment/vnpay/refund
+Authorization: Bearer {token}
+```
+
+### Request Body
+```json
+{
+    "txn_ref": "ORDER_123_1234567890",
+    "transaction_date": "20250101120000",
+    "amount": 100000,
+    "transaction_type": "02",
+    "transaction_no": "12345678",
+    "order_info": "Hoan tien don hang #123",
+    "create_by": "admin"
+}
+```
+
+### Parameters
+- `txn_ref` (required): Mã tham chiếu giao dịch cần hoàn (format: ORDER_{id}_{timestamp})
+- `transaction_date` (required): Thời gian giao dịch thanh toán (format: yyyyMMddHHmmss)
+- `amount` (required): Số tiền hoàn (VNĐ, tối thiểu 1000)
+- `transaction_type` (optional): 
+  - `"02"`: Hoàn tiền toàn phần (mặc định)
+  - `"03"`: Hoàn tiền một phần
+- `transaction_no` (optional): Mã giao dịch VNPay (để "0" nếu không có)
+- `order_info` (optional): Mô tả
+- `create_by` (optional): Người tạo hoàn tiền
+
+### Response
+```json
+{
+    "status": true,
+    "code": "00",
+    "message": "Hoàn tiền thành công",
+    "data": {
+        "vnp_ResponseCode": "00",
+        "vnp_Message": "Success",
+        ...
+    }
+}
+```
+
+### Ví dụ sử dụng
+```javascript
+const response = await fetch('http://localhost:8000/api/client/payment/vnpay/refund', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_TOKEN'
+    },
+    body: JSON.stringify({
+        txn_ref: 'ORDER_123_1234567890',
+        transaction_date: '20250101120000',
+        amount: 100000,
+        transaction_type: '02'
+    })
+});
+
+const data = await response.json();
+```
+
+## Tra cứu giao dịch (Query Transaction)
+
+### API Endpoint
+```
+POST /api/client/payment/vnpay/query
+Authorization: Bearer {token}
+```
+
+### Request Body
+```json
+{
+    "txn_ref": "ORDER_123_1234567890",
+    "transaction_date": "20250101120000",
+    "order_info": "Query transaction"
+}
+```
+
+### Parameters
+- `txn_ref` (required): Mã tham chiếu giao dịch
+- `transaction_date` (required): Thời gian giao dịch (format: yyyyMMddHHmmss)
+- `order_info` (optional): Mô tả
+
+### Response
+```json
+{
+    "status": true,
+    "code": "00",
+    "message": "Tra cứu thành công",
+    "data": {
+        "vnp_ResponseCode": "00",
+        "vnp_Message": "Success",
+        "vnp_TxnRef": "ORDER_123_1234567890",
+        "vnp_TransactionNo": "12345678",
+        "vnp_Amount": "10000000",
+        "vnp_TransactionStatus": "00",
+        ...
+    }
+}
+```
+
+### Ví dụ sử dụng
+```javascript
+const response = await fetch('http://localhost:8000/api/client/payment/vnpay/query', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_TOKEN'
+    },
+    body: JSON.stringify({
+        txn_ref: 'ORDER_123_1234567890',
+        transaction_date: '20250101120000'
+    })
+});
+
+const data = await response.json();
+```
 
 ## Mã lỗi VNPay
 

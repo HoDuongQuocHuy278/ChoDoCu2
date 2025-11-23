@@ -480,3 +480,38 @@
 [2025-11-22 12:39:47] local.INFO: VNPay Payment URL Created {"order_id":7,"txn_ref":"ORDER_7_1763815187","amount":"10000000.00"} 
 [2025-11-23 03:46:19] local.INFO: VNPayService Initialized {"url":"https://sandbox.vnpayment.vn/paymentv2/vpcpay.html","api_url":"https://sandbox.vnpayment.vn/merchant_webapi/api/transaction","is_sandbox":true} 
 [2025-11-23 03:46:19] local.INFO: VNPay Payment URL Created {"order_id":8,"txn_ref":"ORDER_8_1763869579","amount":"10000000.00"} 
+[2025-11-23 05:23:20] local.INFO: VNPayService Initialized {"url":"https://sandbox.vnpayment.vn/paymentv2/vpcpay.html","api_url":"https://sandbox.vnpayment.vn/merchant_webapi/api/transaction","is_sandbox":true} 
+[2025-11-23 05:23:20] local.INFO: VNPay Payment URL Created {"order_id":9,"txn_ref":"ORDER_9_1763875400","amount":"10000000.00"} 
+[2025-11-23 05:31:02] local.INFO: MBBank Payment Request {"url":"https://api-mb.midstack.io.vn/api/transactions","payload":{"amount":10000000,"description":"Thanh toán đơn hàng #DHUAM6LBUK","order_id":"ORDER_10","customer_name":"huy","customer_email":"huyho2782005@gmail.com","customer_phone":"0775999005"}} 
+[2025-11-23 05:31:03] local.INFO: MBBank Payment Response {"status":502,"body":"<html>
+
+<head><title>502 Bad Gateway</title></head>
+
+<body>
+
+<center><h1>502 Bad Gateway</h1></center>
+
+<hr><center>nginx</center>
+
+</body>
+
+</html>
+
+","headers":{"Server":["nginx"],"Date":["Sun, 23 Nov 2025 05:31:03 GMT"],"Content-Type":["text/html; charset=utf-8"],"Content-Length":["150"],"Connection":["keep-alive"],"Strict-Transport-Security":["max-age=63072000"]}} 
+[2025-11-23 05:31:03] local.ERROR: MBBank Payment Failed {"status":502,"error":"<html>
+
+<head><title>502 Bad Gateway</title></head>
+
+<body>
+
+<center><h1>502 Bad Gateway</h1></center>
+
+<hr><center>nginx</center>
+
+</body>
+
+</html>
+
+","error_json":null} 
+[2025-11-23 05:40:41] local.INFO: VNPayService Initialized {"url":"https://sandbox.vnpayment.vn/paymentv2/vpcpay.html","api_url":"https://sandbox.vnpayment.vn/merchant_webapi/api/transaction","is_sandbox":true} 
+[2025-11-23 05:40:41] local.INFO: VNPay Payment URL Created {"order_id":11,"txn_ref":"ORDER_11_1763876441","amount":"10000000.00"} 

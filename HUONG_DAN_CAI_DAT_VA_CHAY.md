@@ -488,6 +488,137 @@ python app.py
 
 ---
 
+## 🌐 CHIA SẺ WEB CHO NGƯỜI CÙNG MẠNG
+
+Để cho phép các thiết bị khác trong cùng mạng LAN truy cập vào web của bạn:
+
+### Bước 1: Lấy IP Local của máy bạn
+
+#### Windows:
+```bash
+# Cách 1: Sử dụng ipconfig
+ipconfig
+
+# Tìm dòng "IPv4 Address" trong phần "Ethernet adapter" hoặc "Wireless LAN adapter"
+# Ví dụ: IPv4 Address. . . . . . . . . . . . : 192.168.1.100
+```
+
+#### Linux/Mac:
+```bash
+# Linux
+ip addr show
+# hoặc
+hostname -I
+
+# Mac
+ifconfig | grep "inet "
+```
+
+**Lưu ý**: IP thường có dạng `192.168.x.x` hoặc `10.0.x.x`
+
+### Bước 2: Chạy các services với host 0.0.0.0
+
+#### Terminal 1: Backend (Laravel)
+```bash
+cd BE_Second-hand-Goods-Trading-Platform
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+**URL truy cập từ máy khác**: `http://[IP_CUA_BAN]:8000`
+**Ví dụ**: `http://192.168.1.100:8000`
+
+#### Terminal 2: Frontend (Vue.js)
+```bash
+cd FE_Second-hand-Goods-Trading-Platform
+npm run dev
+```
+
+**Lưu ý**: File `vite.config.js` đã được cấu hình để chạy trên `0.0.0.0`
+
+**URL truy cập từ máy khác**: `http://[IP_CUA_BAN]:5173`
+**Ví dụ**: `http://192.168.1.100:5173`
+
+#### Terminal 3: Chatbox (Python)
+```bash
+cd chatbox
+venv\Scripts\activate    # Windows (nếu dùng venv)
+python app.py
+```
+
+**Lưu ý**: Chatbox đã được cấu hình để chạy trên `0.0.0.0:5000`
+
+**URL truy cập từ máy khác**: `http://[IP_CUA_BAN]:5000`
+**Ví dụ**: `http://192.168.1.100:5000`
+
+### Bước 3: Cấu hình Firewall (Nếu cần)
+
+#### Windows:
+1. Mở **Windows Defender Firewall**
+2. Click **Advanced settings**
+3. Click **Inbound Rules** → **New Rule**
+4. Chọn **Port** → **Next**
+5. Chọn **TCP** và nhập ports: `8000, 5173, 5000`
+6. Chọn **Allow the connection** → **Next**
+7. Áp dụng cho tất cả profiles → **Next**
+8. Đặt tên: "Cho Do Cu Web" → **Finish**
+
+Hoặc sử dụng PowerShell (chạy với quyền Administrator):
+```powershell
+New-NetFirewallRule -DisplayName "Cho Do Cu Backend" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Cho Do Cu Frontend" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Cho Do Cu Chatbox" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow
+```
+
+#### Linux:
+```bash
+# Ubuntu/Debian
+sudo ufw allow 8000/tcp
+sudo ufw allow 5173/tcp
+sudo ufw allow 5000/tcp
+```
+
+#### Mac:
+Firewall thường tự động cho phép. Nếu cần:
+1. System Preferences → Security & Privacy → Firewall
+2. Click **Firewall Options**
+3. Thêm các ứng dụng cần thiết
+
+### Bước 4: Cập nhật URL trong Frontend (Nếu cần)
+
+Nếu Frontend cần gọi API từ máy khác, cập nhật file `.env` trong Frontend:
+
+```env
+VITE_API_BASE_URL=http://[IP_CUA_BAN]:8000/api/client
+```
+
+**Ví dụ**: `VITE_API_BASE_URL=http://192.168.1.100:8000/api/client`
+
+### Bước 5: Kiểm tra từ máy khác
+
+1. Đảm bảo máy khác cùng mạng WiFi/LAN với bạn
+2. Mở browser trên máy khác
+3. Truy cập:
+   - Frontend: `http://[IP_CUA_BAN]:5173`
+   - Backend API: `http://[IP_CUA_BAN]:8000/api/client/san-pham`
+   - Chatbox: `http://[IP_CUA_BAN]:5000`
+
+### Lưu ý quan trọng:
+
+⚠️ **Bảo mật**:
+- Chỉ chia sẻ trong mạng nội bộ (LAN)
+- Không chia sẻ ra internet công cộng
+- Tắt các services khi không sử dụng
+
+⚠️ **IP động**:
+- IP có thể thay đổi mỗi lần kết nối WiFi
+- Nếu IP thay đổi, cần cập nhật lại URL
+
+⚠️ **Tốc độ**:
+- Tốc độ phụ thuộc vào băng thông mạng LAN
+- Đảm bảo kết nối WiFi/LAN ổn định
+
+---
+
 ## ✅ KIỂM TRA HỆ THỐNG
 
 ### 1. Kiểm tra Backend API

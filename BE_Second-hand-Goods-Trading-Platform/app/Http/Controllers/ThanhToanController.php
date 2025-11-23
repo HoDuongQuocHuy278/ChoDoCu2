@@ -492,4 +492,146 @@ class ThanhToanController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Hoàn tiền giao dịch VNPay (Refund)
+     */
+    public function vnpayRefund(Request $request)
+    {
+        $data = $request->validate([
+            'txn_ref' => 'required|string',
+            'transaction_date' => 'required|string|regex:/^\d{14}$/', // yyyyMMddHHmmss
+            'amount' => 'required|numeric|min:1000',
+            'transaction_type' => 'nullable|in:02,03', // 02: hoàn toàn phần, 03: hoàn một phần
+            'transaction_no' => 'nullable|string',
+            'order_info' => 'nullable|string|max:255',
+            'create_by' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $vnpayService = new VNPayService();
+
+            $refundParams = [
+                'txn_ref' => $data['txn_ref'],
+                'transaction_date' => $data['transaction_date'],
+                'amount' => (float)$data['amount'],
+                'transaction_type' => $data['transaction_type'] ?? '02',
+                'transaction_no' => $data['transaction_no'] ?? '0',
+                'order_info' => $data['order_info'] ?? 'Hoan tien giao dich',
+                'create_by' => $data['create_by'] ?? 'admin',
+                'ip_address' => $request->ip() ?? '127.0.0.1',
+            ];
+
+            $result = $vnpayService->refund($refundParams);
+
+            \Log::info('VNPay Refund Result', [
+                'txn_ref' => $data['txn_ref'],
+                'result' => $result,
+            ]);
+
+            // Kiểm tra kết quả
+            if (isset($result['vnp_ResponseCode']) && $result['vnp_ResponseCode'] == '00') {
+                // Hoàn tiền thành công
+                // Cập nhật đơn hàng nếu có
+                if (preg_match('/ORDER_(\d+)_/', $data['txn_ref'], $matches)) {
+                    $orderId = $matches[1];
+                    $order = DonHang::find($orderId);
+                    if ($order) {
+                        $existingPayload = json_decode($order->payment_payload, true) ?? [];
+                        $existingPayload['refund'] = [
+                            'refund_result' => $result,
+                            'refunded_at' => now()->toDateTimeString(),
+                            'refund_amount' => $data['amount'],
+                        ];
+                        $order->payment_payload = json_encode($existingPayload);
+                        $order->payment_status = 'refunded';
+                        $order->save();
+                    }
+                }
+
+                return response()->json([
+                    'status' => true,
+                    'code' => '00',
+                    'message' => 'Hoàn tiền thành công',
+                    'data' => $result,
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'code' => $result['vnp_ResponseCode'] ?? '99',
+                    'message' => $result['vnp_Message'] ?? 'Hoàn tiền thất bại',
+                    'data' => $result,
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('VNPay Refund Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Lỗi khi hoàn tiền: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Tra cứu giao dịch VNPay (Query Transaction)
+     */
+    public function vnpayQuery(Request $request)
+    {
+        $data = $request->validate([
+            'txn_ref' => 'required|string',
+            'transaction_date' => 'required|string|regex:/^\d{14}$/', // yyyyMMddHHmmss
+            'order_info' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $vnpayService = new VNPayService();
+
+            $queryParams = [
+                'txn_ref' => $data['txn_ref'],
+                'transaction_date' => $data['transaction_date'],
+                'order_info' => $data['order_info'] ?? 'Query transaction',
+                'ip_address' => $request->ip() ?? '127.0.0.1',
+            ];
+
+            $result = $vnpayService->queryTransaction($queryParams);
+
+            \Log::info('VNPay Query Result', [
+                'txn_ref' => $data['txn_ref'],
+                'result' => $result,
+            ]);
+
+            // Kiểm tra kết quả
+            if (isset($result['vnp_ResponseCode']) && $result['vnp_ResponseCode'] == '00') {
+                return response()->json([
+                    'status' => true,
+                    'code' => '00',
+                    'message' => 'Tra cứu thành công',
+                    'data' => $result,
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'code' => $result['vnp_ResponseCode'] ?? '99',
+                    'message' => $result['vnp_Message'] ?? 'Tra cứu thất bại',
+                    'data' => $result,
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('VNPay Query Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Lỗi khi tra cứu: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

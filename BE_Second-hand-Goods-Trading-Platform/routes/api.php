@@ -129,9 +129,14 @@ Route::get('/user', function (Request $request) {
     });
 // Thanh toán
 Route::prefix('client')->group(function () {
+    // VNPay
     Route::post('/payment/vnpay', [ThanhToanController::class, 'vnpay_payment']);
-    Route::post('/payment/mbbank', [ThanhToanController::class, 'mbbank_payment']);
     Route::get('/payment/vnpay/callback', [ThanhToanController::class, 'vnpayCallback']);
+    Route::post('/payment/vnpay/refund', [ThanhToanController::class, 'vnpayRefund'])->middleware('auth:sanctum');
+    Route::post('/payment/vnpay/query', [ThanhToanController::class, 'vnpayQuery'])->middleware('auth:sanctum');
+    
+    // MBBank
+    Route::post('/payment/mbbank', [ThanhToanController::class, 'mbbank_payment']);
     // Test endpoint (có thể xóa sau khi debug xong)
     Route::get('/payment/mbbank/test', [ThanhToanController::class, 'testMbbankApi']);
 });

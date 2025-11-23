@@ -21,6 +21,7 @@ php artisan storage:link
 ```bash
 cd FE_Second-hand-Goods-Trading-Platform
 npm install
+npm run dev
 ```
 
 ### Chatbox (Python)
@@ -38,27 +39,78 @@ python train.py
 
 ## 🏃 CHẠY DỰ ÁN
 
-### Terminal 1: Backend
+### Chạy cho bản thân (localhost)
+
+#### Terminal 1: Backend
 ```bash
 cd BE_Second-hand-Goods-Trading-Platform
 php artisan serve
 ```
 **URL**: http://127.0.0.1:8000
 
-### Terminal 2: Frontend
+#### Terminal 2: Frontend
 ```bash
 cd FE_Second-hand-Goods-Trading-Platform
 npm run dev
 ```
 **URL**: http://localhost:5173
 
-### Terminal 3: Chatbox
+#### Terminal 3: Chatbox
 ```bash
 cd chatbox
 venv\Scripts\activate    # Windows (nếu dùng venv)
 python app.py
 ```
 **URL**: http://127.0.0.1:5000
+
+---
+
+### 🌐 Chia sẻ cho người cùng mạng
+
+#### Bước 1: Lấy IP của bạn
+```bash
+# Windows
+ipconfig
+# Tìm "IPv4 Address" (ví dụ: 192.168.1.100)
+
+# Linux/Mac
+hostname -I
+```
+
+#### Bước 2: Chạy với host 0.0.0.0
+
+**Terminal 1: Backend**
+```bash
+cd BE_Second-hand-Goods-Trading-Platform
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+**Terminal 2: Frontend**
+```bash
+cd FE_Second-hand-Goods-Trading-Platform
+npm run dev
+# Đã cấu hình sẵn trong vite.config.js
+```
+
+**Terminal 3: Chatbox**
+```bash
+cd chatbox
+venv\Scripts\activate    # Windows (nếu dùng venv)
+python app.py
+# Đã cấu hình sẵn host=0.0.0.0
+```
+
+#### Bước 3: Truy cập từ máy khác
+- Frontend: `http://[IP_CUA_BAN]:5173`
+- Backend: `http://[IP_CUA_BAN]:8000`
+- Chatbox: `http://[IP_CUA_BAN]:5000`
+
+**Ví dụ**: Nếu IP của bạn là `192.168.1.100`:
+- Frontend: `http://192.168.1.100:5173`
+- Backend: `http://192.168.1.100:8000`
+- Chatbox: `http://192.168.1.100:5000`
+
+**Lưu ý**: Có thể cần mở Firewall cho các port 8000, 5173, 5000
 
 ---
 
