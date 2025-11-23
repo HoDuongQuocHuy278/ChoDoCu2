@@ -1,0 +1,748 @@
+{
+  "intents": [
+    {
+      "tag": "chao_hoi",
+      "patterns": [
+        "xin chào",
+        "chào bạn",
+        "hello",
+        "hi",
+        "chào",
+        "chào shop",
+        "xin chào shop",
+        "hello shop",
+        "hi shop",
+        "alo shop",
+        "ê shop",
+        "chào ad",
+        "chào admin",
+        "hi ad",
+        "hi admin",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "chào buổi sáng",
+        "chào buổi trưa",
+        "chào buổi tối",
+        "có ai không",
+        "có ai ở đó không",
+        "có ai tư vấn không",
+        "shop ơi",
+        "chị ơi",
+        "anh ơi",
+        "bạn ơi",
+        "bot ơi",
+        "hello có ai không",
+        "xin chào mọi người",
+        "hi mọi người",
+        "mình chào shop",
+        "chào chợ đồ cũ",
+        "alo alo",
+        "hello chợ đồ cũ"
+      ],
+      "responses": [
+        "Xin chào! Chào mừng bạn đến với Chợ Đồ Cũ. Tôi có thể giúp gì cho bạn hôm nay?",
+        "Chào bạn! Rất vui được hỗ trợ bạn tại Chợ Đồ Cũ. Bạn cần tìm sản phẩm gì?",
+        "Xin chào! Tôi là chatbot hỗ trợ của Chợ Đồ Cũ. Bạn muốn hỏi gì về sản phẩm?",
+        "Hello bạn! 👋 Bạn đang muốn mua hay bán đồ cũ để tôi hỗ trợ cho nhanh?",
+        "Chào bạn, cảm ơn đã ghé Chợ Đồ Cũ. Bạn có thể hỏi tôi về sản phẩm, mua bán, thanh toán, giao hàng,… nhé!"
+      ]
+    },
+    {
+      "tag": "tim_san_pham",
+      "patterns": [
+        "tìm sản phẩm",
+        "có sản phẩm gì",
+        "bán gì",
+        "xem sản phẩm",
+        "danh sách sản phẩm",
+        "sản phẩm nào",
+        "có đồ gì",
+        "tìm điện thoại",
+        "tìm laptop",
+        "tìm quần áo",
+        "tìm giày",
+        "có điện thoại không",
+        "có laptop không",
+        "có quần áo không",
+        "có giày không",
+        "tìm đồ gia dụng",
+        "tìm sách",
+        "tìm đồ cũ",
+        "cho xem tất cả sản phẩm",
+        "cho tôi xem sản phẩm",
+        "xem toàn bộ sản phẩm",
+        "có đồ điện tử không",
+        "có đồ thời trang không",
+        "có đồ gia dụng không",
+        "có sách vở không",
+        "có bàn ghế không",
+        "có tủ lạnh cũ không",
+        "có máy giặt cũ không",
+        "tìm tivi cũ",
+        "tìm máy ảnh cũ",
+        "tìm đồ chơi",
+        "tìm balo",
+        "tìm túi xách",
+        "tìm đồ decor",
+        "cho mình xem đồ đang bán",
+        "list sản phẩm",
+        "show sản phẩm",
+        "có món nào hot không",
+        "sản phẩm nổi bật",
+        "sản phẩm mới nhất",
+        "sản phẩm bán chạy"
+      ],
+      "responses": [
+        "Chúng tôi có nhiều sản phẩm đồ cũ chất lượng: điện thoại, laptop, quần áo, giày dép, đồ gia dụng, sách vở, v.v. Bạn muốn tìm sản phẩm gì cụ thể?",
+        "Shop có đầy đủ các loại đồ cũ: điện tử, thời trang, gia dụng, sách. Bạn quan tâm đến sản phẩm nào?",
+        "Tại Chợ Đồ Cũ, bạn có thể tìm thấy: điện thoại, máy tính, quần áo, giày dép, đồ gia dụng và nhiều hơn nữa. Bạn đang tìm gì?",
+        "Bạn có thể dùng bộ lọc trên trang danh sách sản phẩm (theo danh mục, giá, tình trạng, địa điểm) để tìm nhanh hơn. Bạn đang cần loại sản phẩm nào?",
+        "Nếu bạn cho mình biết tên sản phẩm (ví dụ: iPhone 11, laptop Dell, váy nữ…), mình sẽ gợi ý chính xác hơn nhé!"
+      ]
+    },
+    {
+      "tag": "gia_tu_x",
+      "patterns": [
+        "sản phẩm giá rẻ",
+        "giá dưới",
+        "dưới 500k",
+        "dưới 1 triệu",
+        "giá từ",
+        "từ 200k",
+        "từ 500k",
+        "khoảng",
+        "tầm giá",
+        "có gì rẻ",
+        "sản phẩm giá tốt",
+        "giá hợp lý",
+        "đồ tầm 200k",
+        "đồ tầm 500k",
+        "đồ khoảng 1 triệu",
+        "có gì dưới 300k không",
+        "đồ giá sinh viên",
+        "đồ rẻ rẻ",
+        "có đồ nào rẻ không",
+        "đồ nào giá tốt",
+        "muốn tìm đồ rẻ",
+        "có sản phẩm nào giảm giá không",
+        "xem đồ dưới 1tr",
+        "lọc sản phẩm theo giá",
+        "lọc theo khoảng giá",
+        "lọc theo giá từ thấp đến cao",
+        "lọc theo giá từ cao đến thấp"
+      ],
+      "responses": [
+        "Chúng tôi có nhiều sản phẩm với mức giá đa dạng, từ vài chục nghìn đến vài triệu. Bạn có thể lọc theo khoảng giá trên trang danh sách sản phẩm. Bạn muốn tìm sản phẩm giá khoảng bao nhiêu?",
+        "Shop có sản phẩm từ giá rẻ đến cao cấp. Bạn có thể sử dụng bộ lọc giá trên website để tìm sản phẩm phù hợp với ngân sách của mình.",
+        "Mức giá sản phẩm rất đa dạng. Vui lòng cho tôi biết khoảng giá bạn muốn tìm (ví dụ: dưới 300k, 300k–1 triệu) để tôi gợi ý tốt hơn.",
+        "Bạn có thể chọn khoảng giá trong bộ lọc (ví dụ: 0–200k, 200k–500k, 500k–1 triệu, trên 1 triệu) để xem các sản phẩm phù hợp.",
+        "Nếu bạn gửi mình tầm giá và loại sản phẩm (ví dụ: điện thoại dưới 2 triệu, laptop dưới 5 triệu), mình sẽ gợi ý chính xác hơn nhé!"
+      ]
+    },
+    {
+      "tag": "mua_hang",
+      "patterns": [
+        "mua hàng",
+        "đặt hàng",
+        "đặt mua",
+        "mua ngay",
+        "tôi muốn mua",
+        "có thể mua",
+        "làm sao để mua",
+        "cách mua hàng",
+        "hướng dẫn mua",
+        "mua như thế nào",
+        "mua sao vậy",
+        "thủ tục mua",
+        "mua hàng trên web như nào",
+        "muốn chốt đơn",
+        "chốt đơn",
+        "tư vấn mua hàng",
+        "mình muốn chốt",
+        "chỉ mình cách đặt hàng",
+        "mua trên chợ đồ cũ sao",
+        "mua qua app như thế nào"
+      ],
+      "responses": [
+        "Để mua hàng, bạn có thể: 1) Chọn sản phẩm yêu thích, 2) Click 'Mua ngay' hoặc thêm vào giỏ hàng, 3) Điền thông tin giao hàng và thanh toán. Bạn cần hỗ trợ thêm gì không?",
+        "Bạn chỉ cần chọn sản phẩm và click 'Mua ngay'. Sau đó điền thông tin và chọn phương thức thanh toán. Nếu cần hỗ trợ, vui lòng liên hệ người bán qua chat.",
+        "Để mua hàng: chọn sản phẩm → click Mua ngay → điền thông tin → chọn thanh toán → xác nhận đơn. Bạn muốn mua sản phẩm nào để tôi hướng dẫn chi tiết hơn?",
+        "Nếu bạn đã có tài khoản, hãy đăng nhập trước khi đặt hàng để theo dõi đơn dễ hơn. Nếu chưa có, bạn có thể đăng ký nhanh trong vài bước.",
+        "Trong mỗi trang sản phẩm sẽ có nút 'Mua ngay' hoặc 'Chat với người bán'. Bạn có thể nhắn trước để hỏi thêm rồi hãy chốt đơn cho yên tâm nhé."
+      ]
+    },
+    {
+      "tag": "ban_hang",
+      "patterns": [
+        "đăng bán",
+        "bán hàng",
+        "đăng ký bán",
+        "làm sao để bán",
+        "muốn bán",
+        "bán đồ cũ",
+        "đăng sản phẩm",
+        "cách bán hàng",
+        "hướng dẫn bán",
+        "bán trên chợ đồ cũ",
+        "bán trên web",
+        "bán như thế nào",
+        "cho mình đăng bán",
+        "mở gian hàng",
+        "trở thành người bán",
+        "tạo tài khoản bán hàng",
+        "đăng tin bán",
+        "post bài bán",
+        "đăng bài bán đồ",
+        "đăng tin rao vặt"
+      ],
+      "responses": [
+        "Để đăng bán sản phẩm: 1) Đăng nhập/đăng ký tài khoản, 2) Đăng ký làm người bán (nếu chưa), 3) Click 'Đăng bán' và điền thông tin sản phẩm, 4) Upload ảnh và đăng. Bạn cần hỗ trợ gì thêm?",
+        "Bạn cần đăng ký làm người bán trước. Sau đó vào trang 'Đăng bán', điền thông tin và ảnh sản phẩm rồi đăng. Bạn có thể vào trang đăng ký bán hàng để bắt đầu.",
+        "Để bán hàng: đăng ký tài khoản → đăng ký làm người bán → vào mục Đăng bán → điền tên, giá, mô tả, hình ảnh sản phẩm → đăng tin. Nếu cần, bạn có thể tham khảo hướng dẫn chi tiết trên trang trợ giúp.",
+        "Hãy dùng ảnh rõ nét, mô tả chi tiết tình trạng (mới bao nhiêu %, có lỗi gì không) và ghi đúng giá để người mua dễ tin tưởng hơn.",
+        "Nếu bạn bán nhiều sản phẩm, bạn có thể tạo gian hàng riêng để quản lý sản phẩm, đơn hàng và tin nhắn khách dễ hơn."
+      ]
+    },
+    {
+      "tag": "thanh_toan",
+      "patterns": [
+        "thanh toán",
+        "phương thức thanh toán",
+        "cách thanh toán",
+        "chuyển khoản",
+        "cod",
+        "tiền mặt",
+        "vnpay",
+        "momo",
+        "thanh toán như thế nào",
+        "có thanh toán online không",
+        "thanh toán online",
+        "thanh toán khi nhận hàng",
+        "pay như thế nào",
+        "có hỗ trợ momo không",
+        "có hỗ trợ vnpay không",
+        "có hỗ trợ cod không",
+        "trả tiền kiểu gì",
+        "trả tiền như nào",
+        "thanh toán ở đâu"
+      ],
+      "responses": [
+        "Chúng tôi hỗ trợ nhiều phương thức thanh toán: VNPay, MoMo (online), COD - thanh toán khi nhận hàng, hoặc tiền mặt. Bạn muốn thanh toán bằng cách nào?",
+        "Bạn có thể thanh toán online qua VNPay/MoMo hoặc thanh toán khi nhận hàng (COD). Khi đặt hàng, bạn sẽ chọn phương thức thanh toán phù hợp.",
+        "Thanh toán rất linh hoạt: VNPay, MoMo cho thanh toán online hoặc COD cho thanh toán khi nhận hàng. Bạn muốn dùng phương thức nào?",
+        "Với một số đơn giá trị lớn, người bán có thể yêu cầu chuyển khoản cọc trước. Bạn nên trao đổi kỹ với người bán trong phần chat.",
+        "Thông tin chi tiết về thanh toán sẽ hiển thị ở bước cuối cùng khi bạn xác nhận đơn hàng."
+      ]
+    },
+    {
+      "tag": "giao_hang",
+      "patterns": [
+        "giao hàng",
+        "vận chuyển",
+        "ship hàng",
+        "phí ship",
+        "thời gian giao",
+        "giao hàng bao lâu",
+        "phí vận chuyển",
+        "có giao hàng không",
+        "giao đến đâu",
+        "ship toàn quốc không",
+        "ship được không",
+        "bao lâu nhận được",
+        "ship nội thành",
+        "ship tỉnh",
+        "cước vận chuyển",
+        "vận chuyển thế nào",
+        "ship nhanh không",
+        "có giao trong ngày không",
+        "chuyển phát nhanh",
+        "giao hàng tận nơi không"
+      ],
+      "responses": [
+        "Thời gian giao hàng dự kiến từ 3-5 ngày làm việc. Phí vận chuyển tùy thuộc vào địa điểm và được tính khi đặt hàng. Bạn ở khu vực nào?",
+        "Giao hàng trên toàn quốc. Thời gian giao: khoảng 3-5 ngày làm việc. Phí ship sẽ hiển thị khi bạn đặt hàng. Bạn muốn giao đến đâu?",
+        "Shop giao hàng toàn quốc, thời gian 3-5 ngày. Phí vận chuyển phụ thuộc vào khoảng cách và đơn vị vận chuyển, sẽ được hiển thị khi bạn checkout.",
+        "Một số người bán có hỗ trợ giao nhanh/nội thành trong ngày. Bạn có thể xem thêm thông tin trong mô tả sản phẩm hoặc hỏi trực tiếp người bán.",
+        "Khi bạn nhập địa chỉ nhận hàng, hệ thống sẽ tự động tính phí ship dự kiến để bạn tham khảo trước khi xác nhận đơn."
+      ]
+    },
+    {
+      "tag": "trao_doi",
+      "patterns": [
+        "trao đổi",
+        "đổi hàng",
+        "trả hàng",
+        "hoàn trả",
+        "sản phẩm lỗi",
+        "không vừa",
+        "đổi được không",
+        "chính sách đổi trả",
+        "bị hư",
+        "bị lỗi",
+        "không đúng mô tả",
+        "không giống hình",
+        "muốn đổi size",
+        "muốn trả lại",
+        "hoàn tiền",
+        "có cho đổi trả không",
+        "có bảo hành không",
+        "bị vỡ khi nhận",
+        "hàng đến bị hư",
+        "hàng lỗi muốn đổi"
+      ],
+      "responses": [
+        "Bạn có thể đổi/trả hàng trong vòng 7 ngày kể từ khi nhận hàng nếu sản phẩm lỗi hoặc không đúng mô tả. Vui lòng liên hệ người bán để được hỗ trợ.",
+        "Chính sách đổi trả: 7 ngày cho sản phẩm lỗi/sai mô tả. Vui lòng liên hệ người bán qua thông tin trong trang sản phẩm.",
+        "Bạn được đổi/trả trong 7 ngày nếu sản phẩm có vấn đề. Hãy liên hệ người bán để được hỗ trợ cụ thể, nhớ chụp hình sản phẩm khi nhận để làm bằng chứng nhé!",
+        "Trong trường hợp cần hoàn tiền, bạn nên trao đổi trước với người bán và làm theo hướng dẫn của họ/đơn vị vận chuyển.",
+        "Với đồ cũ, một số sản phẩm sẽ không hỗ trợ đổi trả nếu không phải lỗi từ người bán. Bạn hãy đọc kỹ mô tả sản phẩm trước khi đặt nhé."
+      ]
+    },
+    {
+      "tag": "chat_luong",
+      "patterns": [
+        "chất lượng",
+        "sản phẩm như thế nào",
+        "có tốt không",
+        "đồ cũ có tốt không",
+        "kiểm tra chất lượng",
+        "sản phẩm mới hay cũ",
+        "tình trạng sản phẩm",
+        "có đảm bảo không",
+        "hàng có uy tín không",
+        "đồ có bền không",
+        "có phải hàng zin không",
+        "có phải hàng chính hãng không",
+        "xài ổn không",
+        "còn mới không",
+        "mới bao nhiêu phần trăm",
+        "có test hàng không",
+        "có cho test máy không"
+      ],
+      "responses": [
+        "Tất cả sản phẩm đều được người bán mô tả tình trạng chi tiết trước khi đăng. Bạn có thể xem tình trạng (mới 100%, 99%, 95%, v.v.) trong mô tả sản phẩm. Bạn muốn xem sản phẩm nào?",
+        "Sản phẩm được phân loại rõ ràng: mới 100%, 99%, 95%, 90%... Tình trạng và hình ảnh thực tế được hiển thị đầy đủ. Bạn có thể xem chi tiết từng sản phẩm.",
+        "Mỗi sản phẩm đều có mô tả chi tiết về tình trạng, hình ảnh thực tế. Bạn xem sản phẩm cụ thể để biết thêm thông tin nhé!",
+        "Với đồ điện tử, bạn nên xem kỹ mô tả, bảo hành (nếu có) và có thể chat với người bán để yêu cầu video test trước khi chốt đơn.",
+        "Bạn có thể tham khảo thêm đánh giá từ những người mua trước (nếu có) để yên tâm hơn về chất lượng sản phẩm và uy tín người bán."
+      ]
+    },
+    {
+      "tag": "don_hang",
+      "patterns": [
+        "đơn hàng",
+        "xem đơn hàng",
+        "trạng thái đơn",
+        "theo dõi đơn",
+        "đơn hàng của tôi",
+        "đã đặt hàng",
+        "kiểm tra đơn",
+        "đơn đang ở đâu",
+        "đơn hàng đã ship chưa",
+        "đơn của mình đâu",
+        "check đơn giúp mình",
+        "kiểm tra trạng thái đơn hàng",
+        "xem lịch sử mua hàng",
+        "đơn đang giao",
+        "đơn bị trễ",
+        "bao giờ nhận được hàng",
+        "xem mã đơn",
+        "cho xin thông tin đơn",
+        "đơn bị hủy chưa",
+        "sao đơn chưa giao"
+      ],
+      "responses": [
+        "Bạn có thể xem đơn hàng của mình tại trang 'Đơn mua' sau khi đăng nhập. Tại đó bạn sẽ thấy trạng thái, thời gian giao dự kiến và có thể xác nhận nhận hàng.",
+        "Vui lòng đăng nhập và vào trang 'Đơn mua' để xem tất cả đơn hàng của bạn. Bạn cũng có thể theo dõi trạng thái đơn hàng tại đây.",
+        "Sau khi đăng nhập, bạn vào 'Đơn mua' để xem đơn hàng. Nếu cần hỗ trợ về một đơn cụ thể, bạn có thể cung cấp mã đơn cho người bán.",
+        "Nếu đơn hàng bị chậm hơn dự kiến, bạn có thể chat với người bán hoặc liên hệ đơn vị vận chuyển theo mã vận đơn hiển thị trong chi tiết đơn.",
+        "Bạn nên kiểm tra email hoặc thông báo hệ thống, chúng tôi thường gửi cập nhật trạng thái đơn hàng qua đó."
+      ]
+    },
+    {
+      "tag": "huong_dan",
+      "patterns": [
+        "hướng dẫn",
+        "giúp đỡ",
+        "hỗ trợ",
+        "cần giúp",
+        "làm thế nào",
+        "hướng dẫn sử dụng",
+        "tutorial",
+        "không biết dùng",
+        "không biết cách mua",
+        "không biết cách bán",
+        "hướng dẫn từng bước",
+        "chỉ mình với",
+        "giải thích giúp mình",
+        "help me",
+        "support",
+        "cần tư vấn",
+        "cần hướng dẫn",
+        "chỉ mình cách dùng web",
+        "chỉ mình cách dùng app"
+      ],
+      "responses": [
+        "Tôi có thể giúp bạn về: tìm sản phẩm, mua hàng, bán hàng, thanh toán, giao hàng, đổi trả, đơn hàng. Bạn muốn biết thêm về vấn đề gì?",
+        "Chợ Đồ Cũ giúp bạn mua bán đồ cũ dễ dàng. Bạn muốn hỏi về: cách mua, cách bán, thanh toán, giao hàng hay vấn đề khác?",
+        "Tôi sẵn sàng hỗ trợ bạn. Bạn có thể hỏi về: sản phẩm, mua hàng, bán hàng, thanh toán, giao hàng hoặc các vấn đề khác.",
+        "Nếu bạn mô tả cụ thể bạn đang bị vướng ở bước nào (ví dụ: không đặt được hàng, không đăng bán được sản phẩm), mình sẽ hướng dẫn chi tiết hơn.",
+        "Bạn cứ hỏi thoải mái, mình sẽ cố gắng trả lời từng bước một để bạn dễ thực hiện nhất."
+      ]
+    },
+    {
+      "tag": "cam_on",
+      "patterns": [
+        "cảm ơn",
+        "thanks",
+        "thank you",
+        "cám ơn",
+        "cảm ơn bạn",
+        "cảm ơn shop",
+        "cảm ơn nhiều",
+        "thank you so much",
+        "thanks shop",
+        "ok cảm ơn",
+        "ok thanks",
+        "được rồi cảm ơn",
+        "được rồi thanks",
+        "tuyệt vời cảm ơn",
+        "good job",
+        "rất hữu ích cảm ơn",
+        "cảm ơn nhiều nha",
+        "cảm ơn nhiều ạ"
+      ],
+      "responses": [
+        "Không có gì! Rất vui được giúp đỡ bạn. Chúc bạn mua sắm vui vẻ tại Chợ Đồ Cũ!",
+        "Cảm ơn bạn đã sử dụng dịch vụ. Nếu cần hỗ trợ thêm, đừng ngại hỏi nhé! Chúc bạn một ngày tốt lành!",
+        "Rất vui được hỗ trợ bạn! Chúc bạn tìm được sản phẩm ưng ý tại Chợ Đồ Cũ. Hẹn gặp lại!",
+        "Rất hân hạnh được giúp bạn! Nếu sau này bạn có thêm câu hỏi về mua/bán đồ cũ, cứ quay lại hỏi mình nhé.",
+        "Cảm ơn bạn đã tin tưởng Chợ Đồ Cũ. Chúc bạn có trải nghiệm mua bán thật tiện lợi và tiết kiệm!"
+      ]
+    },
+    {
+      "tag": "tam_biet",
+      "patterns": [
+        "tạm biệt",
+        "bye",
+        "hẹn gặp lại",
+        "goodbye",
+        "tạm biệt bạn",
+        "bye bye",
+        "see you",
+        "out nha",
+        "mình đi đây",
+        "thế thôi tạm biệt",
+        "ok cảm ơn mình out đây",
+        "hẹn dịp khác",
+        "gặp lại sau",
+        "see you later"
+      ],
+      "responses": [
+        "Tạm biệt bạn! Cảm ơn đã ghé thăm Chợ Đồ Cũ. Chúc bạn một ngày tốt lành và hẹn gặp lại!",
+        "Hẹn gặp lại bạn! Nếu cần hỗ trợ, tôi luôn sẵn sàng. Chúc bạn mua sắm vui vẻ!",
+        "Tạm biệt! Rất vui được hỗ trợ bạn. Mong bạn sẽ quay lại Chợ Đồ Cũ sớm nhé!",
+        "Cảm ơn bạn đã trò chuyện cùng mình. Hẹn gặp lại bạn trong những lần mua bán tiếp theo!",
+        "Chào tạm biệt! Chúc bạn sớm tìm được món đồ ưng ý nhất!"
+      ]
+    },
+    {
+      "tag": "khong_hieu",
+      "patterns": [
+        "không hiểu",
+        "chưa hiểu",
+        "là gì",
+        "ý bạn là gì",
+        "khó hiểu quá",
+        "giải thích rõ hơn được không",
+        "nói rõ hơn đi",
+        "chưa rõ",
+        "mình không hiểu",
+        "không hiểu lắm",
+        "giải thích lại",
+        "nhắc lại giúp mình",
+        "không hiểu chỗ này",
+        "không hiểu tính năng này",
+        "không hiểu cách dùng"
+      ],
+      "responses": [
+        "Xin lỗi, tôi chưa hiểu rõ câu hỏi của bạn. Bạn có thể diễn đạt lại hoặc hỏi về: sản phẩm, mua hàng, bán hàng, thanh toán, giao hàng.",
+        "Tôi chưa hiểu câu hỏi. Bạn có thể hỏi tôi về: tìm sản phẩm, cách mua bán, thanh toán, giao hàng, đổi trả, hoặc đơn hàng.",
+        "Vui lòng diễn đạt lại câu hỏi hoặc hỏi về các chủ đề: sản phẩm, mua bán, thanh toán, giao hàng. Tôi sẽ cố gắng giúp bạn tốt nhất!",
+        "Có thể bạn cho mình thêm ví dụ hoặc mô tả chi tiết hơn được không? Như vậy mình sẽ hỗ trợ chính xác hơn.",
+        "Nếu bạn đang bị vướng ở bước nào (đăng nhập, đặt hàng, thanh toán, v.v.), hãy nói rõ giúp mình nhé."
+      ]
+    },
+
+    {
+      "tag": "dang_nhap",
+      "patterns": [
+        "đăng nhập",
+        "login",
+        "làm sao để đăng nhập",
+        "không đăng nhập được",
+        "bị lỗi đăng nhập",
+        "quên mật khẩu đăng nhập",
+        "đăng nhập ở đâu",
+        "đăng nhập tài khoản",
+        "vào tài khoản",
+        "sao không vào được tài khoản",
+        "hướng dẫn đăng nhập",
+        "không vào được acc",
+        "bị báo sai mật khẩu",
+        "acc của tôi",
+        "log in như thế nào"
+      ],
+      "responses": [
+        "Để đăng nhập, bạn hãy chọn nút 'Đăng nhập' ở góc trên cùng, sau đó nhập email/số điện thoại và mật khẩu đã đăng ký.",
+        "Nếu bạn quên mật khẩu, hãy dùng chức năng 'Quên mật khẩu' tại trang đăng nhập để đặt lại.",
+        "Bạn kiểm tra giúp mình xem đã gõ đúng email/số điện thoại và mật khẩu chưa, bật/tắt gõ tiếng Việt nữa nhé. Nếu vẫn lỗi, hãy thử đặt lại mật khẩu."
+      ]
+    },
+
+    {
+      "tag": "dang_ky",
+      "patterns": [
+        "đăng ký",
+        "tạo tài khoản",
+        "sign up",
+        "đăng ký như thế nào",
+        "làm sao để đăng ký",
+        "tạo acc mới",
+        "tạo account",
+        "đăng ký tài khoản",
+        "tạo tài khoản bán hàng",
+        "mở tài khoản mới",
+        "đăng ký ở đâu",
+        "hướng dẫn đăng ký"
+      ],
+      "responses": [
+        "Để đăng ký tài khoản mới, bạn chọn nút 'Đăng ký', sau đó nhập họ tên, email/số điện thoại và tạo mật khẩu.",
+        "Bạn có thể đăng ký nhanh bằng email hoặc số điện thoại. Sau khi hoàn tất, hãy xác minh nếu có yêu cầu.",
+        "Sau khi tạo tài khoản, bạn có thể dùng để mua hàng, theo dõi đơn và đăng bán sản phẩm dễ dàng."
+      ]
+    },
+
+    {
+      "tag": "khuyen_mai",
+      "patterns": [
+        "khuyến mãi",
+        "voucher",
+        "mã giảm giá",
+        "code giảm giá",
+        "có khuyến mãi gì không",
+        "có mã giảm không",
+        "có freeship không",
+        "ưu đãi",
+        "khuyến mãi hôm nay",
+        "chương trình khuyến mãi",
+        "giảm giá",
+        "sale",
+        "đang sale gì",
+        "event giảm giá"
+      ],
+      "responses": [
+        "Hiện tại Chợ Đồ Cũ có nhiều ưu đãi theo từng thời điểm. Bạn có thể xem banner trên trang chủ hoặc mục 'Khuyến mãi' để biết chi tiết.",
+        "Một số sản phẩm/ショップ có tặng voucher hoặc freeship. Bạn hãy xem chi tiết trên trang sản phẩm hoặc ở bước thanh toán.",
+        "Nếu bạn có mã giảm giá/voucher, hãy nhập ở bước thanh toán để được áp dụng nhé."
+      ]
+    },
+
+  
+    {
+      "tag": "lien_he",
+      "patterns": [
+        "liên hệ",
+        "contact",
+        "hotline",
+        "số điện thoại hỗ trợ",
+        "email hỗ trợ",
+        "liên hệ admin",
+        "liên hệ chăm sóc khách hàng",
+        "CSKH",
+        "cần gặp nhân viên",
+        "gọi điện cho shop",
+        "gửi mail cho shop",
+        "khiếu nại",
+        "phản hồi",
+        "góp ý",
+        "feedback"
+      ],
+      "responses": [
+        "Bạn có thể liên hệ bộ phận hỗ trợ qua mục 'Liên hệ' trên website hoặc sử dụng khung chat để gửi tin nhắn.",
+        "Nếu bạn cần hỗ trợ khẩn, hãy sử dụng hotline hoặc email được hiển thị ở chân trang (footer) của website.",
+        "Bạn cũng có thể gửi phản hồi/góp ý trong mục 'Hỗ trợ/Feedback', chúng tôi sẽ phản hồi sớm nhất có thể."
+      ]
+    },
+
+    {
+      "tag": "bao_hanh",
+      "patterns": [
+        "bảo hành",
+        "chính sách bảo hành",
+        "bảo hành như thế nào",
+        "có bảo hành không",
+        "bảo hành bao lâu",
+        "bảo hành sản phẩm",
+        "bảo hành đồ điện tử",
+        "sửa chữa",
+        "bảo hành ở đâu",
+        "bảo hành chính hãng"
+      ],
+      "responses": [
+        "Chính sách bảo hành tùy thuộc từng sản phẩm và người bán. Bạn vui lòng xem mục 'Bảo hành' trong mô tả sản phẩm.",
+        "Với đồ điện tử, một số sản phẩm có bảo hành tại cửa hàng hoặc bảo hành chính hãng. Bạn nên hỏi rõ với người bán trong phần chat.",
+        "Nếu sản phẩm được ghi 'Không bảo hành', bạn hãy cân nhắc kỹ tình trạng và thử test kỹ với người bán trước khi chốt đơn nhé."
+      ]
+    },
+    {
+      "tag": "san_pham_moi",
+      "patterns": [
+        "sản phẩm mới",
+        "sản phẩm mới nhất",
+        "có sản phẩm mới không",
+        "đồ mới đăng",
+        "hàng mới về",
+        "sản phẩm mới nhất là gì",
+        "có điện thoại mới không",
+        "có laptop mới không",
+        "có quần áo mới không",
+        "có giày mới không",
+        "đồ mới đăng bán",
+        "hàng mới đăng",
+        "sản phẩm mới đăng",
+        "có gì mới",
+        "show sản phẩm mới",
+        "danh sách sản phẩm mới",
+        "list sản phẩm mới",
+        "sản phẩm mới hôm nay",
+        "đồ mới hôm nay",
+        "hàng mới hôm nay",
+        "có điện mới không",
+        "có đồ gì mới không",
+        "món mới",
+        "sản phẩm mới nhập",
+        "mới đăng"
+      ],
+      "responses": [
+        "PRODUCTS_NEW:"
+      ]
+    },
+    {
+      "tag": "san_pham_theo_gia",
+      "patterns": [
+        "sản phẩm giá rẻ nhất",
+        "đồ rẻ nhất",
+        "hàng rẻ nhất",
+        "sản phẩm rẻ nhất",
+        "giá từ thấp đến cao",
+        "sắp xếp theo giá",
+        "đồ giá rẻ",
+        "sản phẩm giá tốt",
+        "hàng giá tốt",
+        "sản phẩm giá hấp dẫn",
+        "giá rẻ",
+        "đồ rẻ",
+        "hàng rẻ",
+        "giá thấp nhất",
+        "sản phẩm giá thấp",
+        "đồ giá thấp",
+        "hàng giá thấp",
+        "có gì rẻ",
+        "sản phẩm rẻ",
+        "đồ rẻ rẻ",
+        "hàng rẻ rẻ",
+        "giá tốt nhất",
+        "sản phẩm giá tốt nhất",
+        "đồ giá tốt nhất",
+        "hàng giá tốt nhất",
+        "tìm đồ rẻ",
+        "tìm sản phẩm rẻ",
+        "tìm hàng rẻ",
+        "giới thiệu sản phẩm rẻ",
+        "show sản phẩm rẻ",
+        "list sản phẩm rẻ"
+      ],
+      "responses": [
+        "PRODUCTS_PRICE_ASC:"
+      ]
+    },
+    {
+      "tag": "san_pham_lien_quan",
+      "patterns": [
+        "giới thiệu sản phẩm",
+        "gợi ý sản phẩm",
+        "sản phẩm liên quan",
+        "sản phẩm tương tự",
+        "sản phẩm đề xuất",
+        "gợi ý cho tôi",
+        "giới thiệu cho tôi",
+        "đề xuất sản phẩm",
+        "tư vấn sản phẩm",
+        "gợi ý mua gì",
+        "nên mua gì",
+        "mua gì tốt",
+        "sản phẩm nào tốt",
+        "đồ nào tốt",
+        "hàng nào tốt",
+        "sản phẩm hot",
+        "sản phẩm nổi bật",
+        "sản phẩm bán chạy",
+        "hàng bán chạy",
+        "đồ bán chạy",
+        "top sản phẩm",
+        "best seller",
+        "sản phẩm tốt nhất",
+        "đồ tốt nhất",
+        "hàng tốt nhất"
+      ],
+      "responses": [
+        "PRODUCTS_RECOMMENDED:"
+      ]
+    },
+    {
+      "tag": "cuoc_song",
+      "patterns": [
+        "cuộc sống",
+        "đời sống",
+        "sinh hoạt",
+        "tư vấn cuộc sống",
+        "tư vấn đời sống",
+        "câu hỏi về cuộc sống",
+        "vấn đề cuộc sống",
+        "kinh nghiệm cuộc sống",
+        "mẹo vặt cuộc sống",
+        "tiết kiệm",
+        "tiết kiệm chi tiêu",
+        "cách tiết kiệm",
+        "mua đồ cũ có tốt không",
+        "mua đồ cũ nên hay không",
+        "có nên mua đồ cũ",
+        "lợi ích mua đồ cũ",
+        "tại sao nên mua đồ cũ",
+        "mua đồ cũ tiết kiệm",
+        "đồ cũ vs đồ mới",
+        "nên mua đồ cũ hay mới",
+        "mẹo mua đồ cũ",
+        "cách chọn đồ cũ",
+        "kinh nghiệm mua đồ cũ",
+        "hướng dẫn mua đồ cũ",
+        "bí quyết mua đồ cũ",
+        "an toàn mua đồ cũ",
+        "chất lượng đồ cũ",
+        "đồ cũ có tốt không",
+        "vệ sinh đồ cũ",
+        "làm sạch đồ cũ",
+        "khử trùng đồ cũ"
+      ],
+      "responses": [
+        "Mua đồ cũ là một cách tuyệt vời để tiết kiệm tiền và bảo vệ môi trường. Tại Chợ Đồ Cũ, bạn có thể tìm thấy nhiều sản phẩm chất lượng với giá cả phải chăng. Mỗi sản phẩm đều được người bán mô tả tình trạng chi tiết, bạn nên xem kỹ trước khi mua. Với đồ điện tử, hãy test kỹ và hỏi người bán về bảo hành. Với quần áo, nên giặt sạch và phơi khô trước khi sử dụng. Bạn muốn tìm sản phẩm gì cụ thể không?",
+        "Mua đồ cũ giúp bạn tiết kiệm được khá nhiều tiền so với mua đồ mới. Bạn nên: 1) Xem kỹ hình ảnh và mô tả sản phẩm, 2) Chat với người bán để hỏi thêm chi tiết, 3) Xem đánh giá từ người mua trước (nếu có), 4) Test sản phẩm trước khi chốt đơn (với đồ điện tử). Bạn đang tìm sản phẩm gì để tôi gợi ý?",
+        "Đồ cũ không có nghĩa là chất lượng kém. Nhiều sản phẩm vẫn còn rất tốt và được bảo quản cẩn thận. Tại Chợ Đồ Cũ, bạn có thể tìm thấy đồ điện tử, quần áo, đồ gia dụng với mức giá hợp lý. Mẹo nhỏ: hãy đọc kỹ mô tả, xem nhiều ảnh, và trao đổi trực tiếp với người bán để yên tâm hơn. Bạn cần tìm sản phẩm gì?",
+        "Mua đồ cũ là xu hướng hiện đại giúp tiết kiệm và bảo vệ môi trường. Với đồ điện tử, hãy kiểm tra kỹ chức năng và hỏi về bảo hành. Với quần áo, nên giặt sạch trước khi mặc. Với đồ gia dụng, kiểm tra tình trạng hoạt động. Bạn muốn tìm loại sản phẩm nào? Tôi có thể giới thiệu cho bạn.",
+        "Chợ Đồ Cũ giúp bạn tìm được những món đồ chất lượng với giá tốt. Mỗi sản phẩm đều có mô tả chi tiết về tình trạng. Bạn nên: đọc kỹ mô tả, xem đầy đủ hình ảnh, chat với người bán, và kiểm tra kỹ trước khi thanh toán. Bạn đang tìm sản phẩm gì? Để tôi gợi ý cho bạn."
+      ]
+    }
+  ]
+}
