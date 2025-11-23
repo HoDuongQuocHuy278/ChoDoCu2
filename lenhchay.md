@@ -114,6 +114,47 @@ python app.py
 
 ---
 
+### 🔗 Chia sẻ qua 1 đường link duy nhất
+
+Với cấu hình Vite Proxy đã được thiết lập, bạn có thể chia sẻ **chỉ 1 URL** cho người khác!
+
+#### Cách hoạt động:
+- Frontend đã được cấu hình proxy tự động
+- Tất cả API calls (`/api/*`) sẽ tự động được proxy đến Backend
+- Chatbox calls (`/chatbox/*`) sẽ tự động được proxy đến Chatbox
+
+#### Chạy services:
+```bash
+# Terminal 1: Backend
+cd BE_Second-hand-Goods-Trading-Platform
+php artisan serve --host=0.0.0.0 --port=8000
+
+# Terminal 2: Frontend
+cd FE_Second-hand-Goods-Trading-Platform
+npm run dev
+
+# Terminal 3: Chatbox
+cd chatbox
+venv\Scripts\activate    # Windows (nếu dùng venv)
+python app.py
+```
+
+#### Chia sẻ URL duy nhất:
+Chỉ cần chia sẻ: `http://[IP_CUA_BAN]:5173`
+
+**Ví dụ**: `http://192.168.1.100:5173`
+
+Người dùng chỉ cần truy cập URL này, tất cả tính năng sẽ hoạt động! ✅
+
+**Lưu ý**: 
+- Đảm bảo tất cả 3 services đang chạy
+- Vite proxy đã được cấu hình sẵn trong `vite.config.js`
+
+#### Chia sẻ qua Internet (ngrok):
+Nếu muốn chia sẻ ra internet, xem file [HUONG_DAN_CHIA_SE_1_LINK.md](./HUONG_DAN_CHIA_SE_1_LINK.md)
+
+---
+
 ## 🔄 RESET DATABASE
 
 Nếu muốn reset database và load lại dữ liệu mẫu:
@@ -126,10 +167,7 @@ php artisan migrate:fresh --seed
 
 ## 📚 XEM HƯỚNG DẪN CHI TIẾT
 
-Xem file [HUONG_DAN_CAI_DAT_VA_CHAY.md](./HUONG_DAN_CAI_DAT_VA_CHAY.md) để biết:
-- ✅ Yêu cầu hệ thống
-- ✅ Cách cài đặt từng công cụ
-- ✅ Cấu hình chi tiết
-- ✅ Xử lý lỗi thường gặp
-- ✅ Và nhiều hơn nữa...
+- 📖 [HUONG_DAN_CAI_DAT_VA_CHAY.md](./HUONG_DAN_CAI_DAT_VA_CHAY.md) - Hướng dẫn cài đặt từ đầu
+- 🌐 [HUONG_DAN_CHIA_SE_MANG.md](./HUONG_DAN_CHIA_SE_MANG.md) - Chia sẻ cho người cùng mạng
+- 🔗 [HUONG_DAN_CHIA_SE_1_LINK.md](./HUONG_DAN_CHIA_SE_1_LINK.md) - Chia sẻ qua 1 đường link duy nhất
 
