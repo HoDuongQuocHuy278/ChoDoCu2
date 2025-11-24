@@ -1,73 +1,92 @@
 <template>
   <div class="product-page container py-4">
-    <section class="d-flex flex-column flex-lg-row gap-3 gap-lg-4 mb-4">
-      <aside class="filter-card card shadow-filter">
-        <div class="card-header filter-header">
-          <h5 class="m-0 fw-bold filter-title">
-            <i class="bx bx-filter-alt me-2"></i>Bộ lọc
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label filter-label">
-              <i class="bx bx-search me-2"></i>Tìm kiếm
-            </label>
-            <div class="input-group search-wrapper">
-              <span class="input-group-text search-icon-wrapper">
-                <i class="bx bx-search search-icon"></i>
-              </span>
-              <input v-model="filters.keyword" type="search" class="form-control search-input" placeholder="Từ khóa, thương hiệu..." @keyup.enter="fetchProducts">
-              <button class="btn btn-search" type="button" @click="fetchProducts">
-                <i class="bx bx-search-alt-2"></i>
+    <section class="d-flex flex-column flex-lg-row gap-4 mb-4">
+      <aside class="filter-sidebar">
+        <div class="filter-card card shadow-filter">
+          <div class="card-header filter-header">
+            <div class="filter-header-content">
+              <i class="bx bx-filter-alt filter-header-icon"></i>
+              <h5 class="m-0 fw-bold filter-title">Bộ lọc sản phẩm</h5>
+            </div>
+            <p class="filter-subtitle m-0">Tìm kiếm sản phẩm phù hợp với bạn</p>
+          </div>
+          <div class="card-body filter-body">
+            <!-- Tìm kiếm -->
+            <div class="filter-section">
+              <label class="filter-label">
+                <i class="bx bx-search filter-label-icon"></i>
+                <span>Tìm kiếm</span>
+              </label>
+              <div class="search-wrapper">
+                
+                <input
+                  v-model="filters.keyword"
+                  type="search"
+                  class="form-control search-input"
+                  placeholder="Nhập từ khóa, thương hiệu..."
+                  @keyup.enter="fetchProducts"
+                >
+                <button class="btn btn-search" type="button" @click="fetchProducts" title="Tìm kiếm">
+                  <i class="bx bx-search-alt-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Danh mục -->
+            <div class="filter-section">
+              <label class="filter-label">
+                <i class="bx bx-category filter-label-icon"></i>
+                <span>Danh mục</span>
+              </label>
+              <select v-model="filters.category" class="form-select filter-select" @change="fetchProducts">
+                <option value="">Tất cả danh mục</option>
+                <option v-for="cat in categories" :key="cat.slug || cat.id" :value="cat.slug || cat.id">
+                  {{ cat.name || cat.ten_danh_muc }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Mức giá -->
+            <div class="filter-section">
+              <label class="filter-label">
+                <i class="bx bx-money filter-label-icon"></i>
+                <span>Mức giá</span>
+              </label>
+              <select v-model="filters.price" class="form-select filter-select" @change="fetchProducts">
+                <option value="all">Tất cả mức giá</option>
+                <option value="0-500">Dưới 500.000đ</option>
+                <option value="500-1000">500.000đ - 1.000.000đ</option>
+                <option value="1000-3000">1.000.000đ - 3.000.000đ</option>
+                <option value="3000-99999">Trên 3.000.000đ</option>
+              </select>
+            </div>
+
+            <!-- Tình trạng -->
+            <div class="filter-section">
+              <label class="filter-label">
+                <i class="bx bx-check-circle filter-label-icon"></i>
+                <span>Tình trạng</span>
+              </label>
+              <select v-model="filters.condition" class="form-select filter-select" @change="fetchProducts">
+                <option value="">Tất cả tình trạng</option>
+                <option value="new">Mới 100%</option>
+                <option value="likenew">Như mới (99%)</option>
+                <option value="good">Tốt</option>
+                <option value="fair">Khá</option>
+              </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="filter-actions">
+              <button class="btn btn-reset" type="button" @click="resetFilters">
+                <i class="bx bx-refresh"></i>
+                <span>Đặt lại</span>
+              </button>
+              <button class="btn btn-apply" type="button" @click="fetchProducts">
+                <i class="bx bx-check"></i>
+                <span>Áp dụng</span>
               </button>
             </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label filter-label">
-              <i class="bx bx-category me-2"></i>Danh mục
-            </label>
-            <select v-model="filters.category" class="form-select filter-select" @change="fetchProducts">
-              <option value="">Tất cả</option>
-              <option v-for="cat in categories" :key="cat.slug || cat.id" :value="cat.slug || cat.id">
-                {{ cat.name || cat.ten_danh_muc }}
-              </option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label filter-label">
-              <i class="bx bx-money me-2"></i>Mức giá
-            </label>
-            <select v-model="filters.price" class="form-select filter-select" @change="fetchProducts">
-              <option value="all">Tất cả</option>
-              <option value="0-500">Dưới 500.000đ</option>
-              <option value="500-1000">500.000đ - 1.000.000đ</option>
-              <option value="1000-3000">1.000.000đ - 3.000.000đ</option>
-              <option value="3000-99999">Trên 3.000.000đ</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label filter-label">
-              <i class="bx bx-check-circle me-2"></i>Tình trạng
-            </label>
-            <select v-model="filters.condition" class="form-select filter-select" @change="fetchProducts">
-              <option value="">Tất cả</option>
-              <option value="new">Mới 100%</option>
-              <option value="likenew">Như mới (99%)</option>
-              <option value="good">Tốt</option>
-              <option value="fair">Khá</option>
-            </select>
-          </div>
-
-          <div class="d-flex gap-2">
-            <button class="btn btn-reset w-50" type="button" @click="resetFilters">
-              <i class="bx bx-refresh me-1"></i>Đặt lại
-            </button>
-            <button class="btn btn-apply w-50" type="button" @click="fetchProducts">
-              <i class="bx bx-check me-1"></i>Áp dụng
-            </button>
           </div>
         </div>
       </aside>
@@ -82,7 +101,8 @@
             <label class="sort-label fw-semibold small m-0">
               <i class="bx bx-sort me-1"></i>Sắp xếp:
             </label>
-            <select v-model="filters.sort" class="form-select form-select-sm sort-select" style="width: 200px;" @change="fetchProducts">
+            <select v-model="filters.sort" class="form-select form-select-sm sort-select" style="width: 200px;"
+              @change="fetchProducts">
               <option value="newest">Mới nhất</option>
               <option value="price_asc">Giá tăng dần</option>
               <option value="price_desc">Giá giảm dần</option>
@@ -121,10 +141,12 @@
           </div>
 
           <div v-else class="row g-3 g-lg-4 product-grid">
-            <article v-for="(product, index) in products" :key="product.id" class="col-12 col-sm-6 col-lg-4 col-xl-3 product-item" :style="{ animationDelay: `${index * 0.05}s` }">
+            <article v-for="(product, index) in products" :key="product.id"
+              class="col-12 col-sm-6 col-lg-4 col-xl-3 product-item" :style="{ animationDelay: `${index * 0.05}s` }">
               <div class="product-card card h-100 shadow-product">
                 <div class="ratio ratio-4x3 product-image-wrapper">
-                  <img :src="getProductImage(product) || fallbackImg" class="card-img-top product-image" :alt="product.name" @error="replaceImage($event)">
+                  <img :src="getProductImage(product) || fallbackImg" class="card-img-top product-image"
+                    :alt="product.name" @error="replaceImage($event)">
                   <div class="image-overlay"></div>
                   <span v-if="product.discount" class="badge badge-discount">
                     <i class="bx bx-tag me-1"></i>-{{ product.discount }}%
@@ -134,8 +156,10 @@
                   <h6 class="card-title product-name text-truncate" :title="product.name">{{ product.name }}</h6>
                   <p class="card-text small mb-2 line-clamp-2">{{ product.description }}</p>
                   <div class="d-flex align-items-baseline gap-2 mb-3">
-                    <span class="price price-current" :class="index % 2 === 0 ? 'price-red' : 'price-orange'">{{ formatCurrency(finalPrice(product)) }}</span>
-                    <span v-if="product.discount" class="price-old text-decoration-line-through small">{{ formatCurrency(product.price) }}</span>
+                    <span class="price price-current" :class="index % 2 === 0 ? 'price-red' : 'price-orange'">{{
+                      formatCurrency(finalPrice(product)) }}</span>
+                    <span v-if="product.discount" class="price-old text-decoration-line-through small">{{
+                      formatCurrency(product.price) }}</span>
                   </div>
                   <div class="mt-auto d-flex flex-wrap gap-2 product-actions">
                     <router-link :to="`/san-pham/${product.id}`" class="btn btn-detail btn-sm flex-grow-1">
@@ -153,8 +177,10 @@
             </article>
           </div>
 
-          <nav v-if="pagination.last_page > 1" class="pagination-wrap d-flex justify-content-center align-items-center gap-3 mt-5">
-            <button class="btn btn-pagination btn-prev" type="button" :disabled="pagination.current_page === 1" @click="changePage(pagination.current_page - 1)">
+          <nav v-if="pagination.last_page > 1"
+            class="pagination-wrap d-flex justify-content-center align-items-center gap-3 mt-5">
+            <button class="btn btn-pagination btn-prev" type="button" :disabled="pagination.current_page === 1"
+              @click="changePage(pagination.current_page - 1)">
               <i class="bx bx-chevron-left me-1"></i>Trước
             </button>
             <span class="pagination-info">
@@ -162,7 +188,9 @@
               <span class="pagination-separator">/</span>
               <span class="pagination-total">{{ pagination.last_page }}</span>
             </span>
-            <button class="btn btn-pagination btn-next" type="button" :disabled="pagination.current_page === pagination.last_page" @click="changePage(pagination.current_page + 1)">
+            <button class="btn btn-pagination btn-next" type="button"
+              :disabled="pagination.current_page === pagination.last_page"
+              @click="changePage(pagination.current_page + 1)">
               Sau<i class="bx bx-chevron-right ms-1"></i>
             </button>
           </nav>
@@ -246,14 +274,14 @@ async function fetchCategories() {
     const { data } = await axios.get(CATEGORY_API)
     const rawCategories = data?.data || data || []
     // Map field names từ backend (ten_danh_muc -> name)
-    categories.value = Array.isArray(rawCategories) 
+    categories.value = Array.isArray(rawCategories)
       ? rawCategories.map(cat => ({
-          id: cat.id,
-          name: cat.ten_danh_muc || cat.name,
-          slug: cat.slug,
-          mo_ta: cat.mo_ta,
-          hinh_anh: cat.hinh_anh,
-        }))
+        id: cat.id,
+        name: cat.ten_danh_muc || cat.name,
+        slug: cat.slug,
+        mo_ta: cat.mo_ta,
+        hinh_anh: cat.hinh_anh,
+      }))
       : []
   } catch (err) {
     console.warn('Không thể tải danh mục', err)
@@ -337,12 +365,12 @@ function formatCurrency(value) {
 function getProductImage(product) {
   // Ưu tiên: image field từ API
   if (product?.image) return product.image
-  
+
   // Thứ 2: images array từ API
   if (Array.isArray(product?.images) && product.images.length > 0) {
     return product.images[0]
   }
-  
+
   // Thứ 3: parse từ hinh_anh (JSON array string)
   if (product?.hinh_anh) {
     try {
@@ -360,7 +388,7 @@ function getProductImage(product) {
       }
     }
   }
-  
+
   return null
 }
 
@@ -452,64 +480,105 @@ function buyNow(product) {
   padding-bottom: 3rem;
 }
 
-/* ===== Filter Card ===== */
+/* ===== Filter Sidebar ===== */
+.filter-sidebar {
+  width: 100%;
+  max-width: 320px;
+  flex-shrink: 0;
+}
+
 .filter-card {
   width: 100%;
-  max-width: 280px;
   border: none;
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
   background: #ffffff;
   animation: slideInLeft 0.5s ease-out;
+  height: fit-content;
+  position: sticky;
+  top: 20px;
 }
 
 .shadow-filter {
-  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.12), 0 4px 6px -2px rgba(99, 102, 241, 0.08);
+  box-shadow: 0 10px 40px -5px rgba(99, 102, 241, 0.15), 0 4px 12px -2px rgba(99, 102, 241, 0.1);
 }
 
 .filter-header {
   background: var(--primary-gradient);
   border: none;
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem 1.5rem 1.25rem;
   border-radius: 0;
 }
 
-.filter-title {
-  color: #ffffff;
-  font-size: 1.1rem;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.3px;
+.filter-header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
-.filter-title i {
+.filter-header-icon {
+  font-size: 1.5rem;
+  color: #ffffff;
   animation: rotate 3s linear infinite;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* ===== Filter Labels ===== */
+.filter-title {
+  color: #ffffff;
+  font-size: 1.25rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+
+.filter-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+}
+
+.filter-body {
+  padding: 1.5rem;
+}
+
+/* ===== Filter Sections ===== */
+.filter-section {
+  margin-bottom: 1.5rem;
+}
+
+.filter-section:last-of-type {
+  margin-bottom: 1.25rem;
+}
+
 .filter-label {
   color: var(--text-primary);
   font-weight: 600;
   font-size: 0.95rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   letter-spacing: 0.2px;
 }
 
-.filter-label i {
+.filter-label-icon {
   color: var(--primary-color);
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  flex-shrink: 0;
 }
 
 /* ===== Search Input ===== */
 .search-wrapper {
+  display: flex;
+  align-items: stretch;
   position: relative;
   border-radius: 12px;
-  overflow: hidden;
   border: 2px solid #e5e7eb;
   transition: all 0.3s ease;
   background: #ffffff;
+  overflow: hidden;
 }
 
 .search-wrapper:focus-within {
@@ -519,10 +588,13 @@ function buyNow(product) {
 }
 
 .search-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--primary-gradient);
   border: none;
   color: #ffffff;
-  padding: 0.75rem 1rem;
+  padding: 0 1rem;
   box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
@@ -532,10 +604,11 @@ function buyNow(product) {
 }
 
 .search-input {
+  flex: 1;
   border: none;
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
-  transition: all 0.3s ease;
+  /* transition: all 0.3s ease; */
   color: var(--text-primary);
   background: #ffffff;
 }
@@ -552,6 +625,10 @@ function buyNow(product) {
 }
 
 .btn-search {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
   background: var(--primary-gradient) !important;
   background-color: #6366f1 !important;
   border: none !important;
@@ -578,20 +655,27 @@ function buyNow(product) {
 
 /* ===== Filter Selects ===== */
 .filter-select {
+  width: 100%;
   border: 2px solid var(--border-color);
   border-radius: 12px;
-  padding: 0.7rem 1rem;
+  padding: 0.875rem 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.95rem;
   color: var(--text-primary);
   background: #ffffff;
   font-weight: 500;
   box-shadow: var(--shadow-sm);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236366f1' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
 }
 
 .filter-select:hover {
   border-color: var(--primary-light);
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .filter-select:focus {
@@ -603,23 +687,38 @@ function buyNow(product) {
 
 .filter-select option {
   color: var(--text-primary);
-  padding: 0.5rem;
+  padding: 0.75rem;
   background: #ffffff;
+  font-weight: 500;
 }
 
-/* ===== Filter Buttons ===== */
+/* ===== Filter Actions ===== */
+.filter-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid #f1f5f9;
+}
+
 .btn-reset {
+  flex: 1;
   background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
   background-color: #64748b !important;
   border: none !important;
   color: #ffffff !important;
   font-weight: 600;
   border-radius: 12px;
-  padding: 0.7rem 1rem;
+  padding: 0.875rem 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(100, 116, 139, 0.25);
   letter-spacing: 0.3px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
 }
 
 .btn-reset:hover {
@@ -635,17 +734,23 @@ function buyNow(product) {
 }
 
 .btn-apply {
+  flex: 1;
   background: var(--success-gradient) !important;
   background-color: #10b981 !important;
   border: none !important;
   color: #ffffff !important;
   font-weight: 600;
   border-radius: 12px;
-  padding: 0.7rem 1rem;
+  padding: 0.875rem 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
   letter-spacing: 0.3px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
 }
 
 .btn-apply:hover {
@@ -1145,6 +1250,7 @@ function buyNow(product) {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1155,6 +1261,7 @@ function buyNow(product) {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1166,6 +1273,7 @@ function buyNow(product) {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1177,6 +1285,7 @@ function buyNow(product) {
     opacity: 0;
     transform: translateX(-30px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -1187,45 +1296,59 @@ function buyNow(product) {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
 }
 
 @keyframes searchPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
 }
 
 @keyframes pulseBadge {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
 }
 
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-10px);
   }
+
   75% {
     transform: translateX(10px);
   }
@@ -1235,6 +1358,7 @@ function buyNow(product) {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -1242,9 +1366,26 @@ function buyNow(product) {
 
 /* ===== Responsive ===== */
 @media (max-width: 992px) {
+  .filter-sidebar {
+    max-width: 100%;
+  }
+
   .filter-card {
-    max-width: none;
+    position: relative;
+    top: 0;
     margin-bottom: 1.5rem;
+  }
+
+  .filter-header {
+    padding: 1.25rem 1.25rem 1rem;
+  }
+
+  .filter-body {
+    padding: 1.25rem;
+  }
+
+  .filter-section {
+    margin-bottom: 1.25rem;
   }
 
   .page-title {
@@ -1253,6 +1394,29 @@ function buyNow(product) {
 
   .product-card:hover {
     transform: translateY(-4px) scale(1.01);
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-header-content {
+    flex-wrap: wrap;
+  }
+
+  .filter-title {
+    font-size: 1.1rem;
+  }
+
+  .filter-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+  }
+
+  .btn-reset,
+  .btn-apply {
+    width: 100%;
   }
 }
 
@@ -1268,4 +1432,3 @@ function buyNow(product) {
   }
 }
 </style>
-

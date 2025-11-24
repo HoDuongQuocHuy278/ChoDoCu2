@@ -148,6 +148,7 @@ class SanPham extends Model
     /**
      * Convert relative path thành absolute URL dựa trên request hiện tại
      * Giúp hình ảnh hiển thị đúng khi chia sẻ qua mạng
+     * Ưu tiên sử dụng IP mạng thay vì localhost
      * 
      * @param string $path - Relative path (e.g., '/storage/products/image.jpg')
      * @return string - Absolute URL
@@ -167,6 +168,15 @@ class SanPham extends Model
                 $scheme = $request->getScheme();
                 $host = $request->getHost();
                 $port = $request->getPort();
+                
+                // Nếu host là localhost hoặc 127.0.0.1, thử lấy IP mạng từ config
+                if (in_array($host, ['localhost', '127.0.0.1', '::1'])) {
+                    $appUrl = config('app.url', 'http://127.0.0.1:8000');
+                    // Nếu APP_URL có IP mạng, dùng nó
+                    if (preg_match('/http[s]?:\/\/(\d+\.\d+\.\d+\.\d+)/', $appUrl, $matches)) {
+                        $host = $matches[1];
+                    }
+                }
                 
                 // Thêm port nếu không phải port mặc định
                 $baseUrl = $scheme . '://' . $host;

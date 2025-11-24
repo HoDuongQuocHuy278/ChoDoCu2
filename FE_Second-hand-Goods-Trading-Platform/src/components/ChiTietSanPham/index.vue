@@ -8,8 +8,12 @@
     <div v-else-if="product" class="row g-4">
       <div class="col-lg-6">
         <div class="gallery card shadow-sm">
-          <div class="ratio ratio-4x3">
+          <div class="ratio ratio-4x3 main-image-wrapper" @click="openLightbox">
             <img :src="activeImage" class="main-img" :alt="product.name" @error="onImgError($event)">
+            <div class="image-overlay">
+              <i class="bx bx-zoom-in"></i>
+              <span>Nhấn để xem lớn hơn</span>
+            </div>
           </div>
           <div class="thumb-list mt-3">
             <button
@@ -21,6 +25,51 @@
               @click="activeImage = img"
             >
               <img :src="img" :alt="product.name" @error="onImgError($event)">
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lightbox Modal -->
+      <div v-if="showLightbox" class="lightbox-overlay" @click="closeLightbox">
+        <div class="lightbox-container" @click.stop>
+          <button class="lightbox-close" @click="closeLightbox" type="button">
+            <i class="bx bx-x"></i>
+          </button>
+          <button 
+            v-if="images.length > 1"
+            class="lightbox-nav lightbox-prev" 
+            @click="prevImage" 
+            type="button"
+            :disabled="currentImageIndex === 0"
+          >
+            <i class="bx bx-chevron-left"></i>
+          </button>
+          <div class="lightbox-image-wrapper">
+            <img :src="lightboxImage" class="lightbox-image" :alt="product.name" @error="onImgError($event)">
+            <div class="lightbox-info">
+              <span class="lightbox-counter">{{ currentImageIndex + 1 }} / {{ images.length }}</span>
+            </div>
+          </div>
+          <button 
+            v-if="images.length > 1"
+            class="lightbox-nav lightbox-next" 
+            @click="nextImage" 
+            type="button"
+            :disabled="currentImageIndex === images.length - 1"
+          >
+            <i class="bx bx-chevron-right"></i>
+          </button>
+          <div v-if="images.length > 1" class="lightbox-thumbnails">
+            <button
+              v-for="(img, idx) in images"
+              :key="idx"
+              type="button"
+              class="lightbox-thumb"
+              :class="{ active: idx === currentImageIndex }"
+              @click="goToImage(idx)"
+            >
+              <img :src="img" :alt="`Hình ${idx + 1}`" @error="onImgError($event)">
             </button>
           </div>
         </div>
@@ -141,12 +190,18 @@ export default {
       isLoading: true,
       errorMessage: '',
       liked: false,
-      quantity: 1
+      quantity: 1,
+      showLightbox: false,
+      currentImageIndex: 0,
+      keyboardHandler: null
     }
   },
   computed: {
     productId() {
       return this.$route.params?.id
+    },
+    lightboxImage() {
+      return this.images[this.currentImageIndex] || this.fallbackImg
     }
   },
   watch: {
@@ -157,6 +212,10 @@ export default {
   },
   mounted() {
     this.fetchProduct()
+    this.setupKeyboardNavigation()
+  },
+  beforeUnmount() {
+    this.removeKeyboardNavigation()
   },
   methods: {
     async fetchProduct() {
@@ -271,6 +330,51 @@ export default {
     toggleFavourite() {
       this.liked = !this.liked
       // Có thể gọi API đánh dấu yêu thích tại đây.
+    },
+    openLightbox() {
+      if (this.images.length === 0) return
+      this.currentImageIndex = this.images.findIndex(img => img === this.activeImage)
+      if (this.currentImageIndex === -1) this.currentImageIndex = 0
+      this.showLightbox = true
+      document.body.style.overflow = 'hidden' // Prevent background scroll
+    },
+    closeLightbox() {
+      this.showLightbox = false
+      document.body.style.overflow = '' // Restore scroll
+    },
+    nextImage() {
+      if (this.currentImageIndex < this.images.length - 1) {
+        this.currentImageIndex++
+      }
+    },
+    prevImage() {
+      if (this.currentImageIndex > 0) {
+        this.currentImageIndex--
+      }
+    },
+    goToImage(index) {
+      this.currentImageIndex = index
+    },
+    setupKeyboardNavigation() {
+      this.keyboardHandler = (e) => {
+        if (!this.showLightbox) return
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          this.nextImage()
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          this.prevImage()
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          this.closeLightbox()
+        }
+      }
+      window.addEventListener('keydown', this.keyboardHandler)
+    },
+    removeKeyboardNavigation() {
+      if (this.keyboardHandler) {
+        window.removeEventListener('keydown', this.keyboardHandler)
+      }
     }
   }
 }
@@ -360,10 +464,285 @@ export default {
   height: 160px;
   object-fit: cover;
 }
+.main-image-wrapper {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.main-image-wrapper:hover {
+  transform: scale(1.01);
+}
+
+.main-image-wrapper:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.image-overlay i {
+  font-size: 2rem;
+}
+
+/* Lightbox Styles */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.lightbox-container {
+  position: relative;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: -50px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.lightbox-image-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: 75vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+  display: block;
+}
+
+.lightbox-info {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #ffffff;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.lightbox-nav:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.lightbox-prev {
+  left: -70px;
+}
+
+.lightbox-next {
+  right: -70px;
+}
+
+.lightbox-thumbnails {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  max-width: 100%;
+  justify-content: center;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.lightbox-thumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.lightbox-thumbnails::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lightbox-thumbnails::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.lightbox-thumb {
+  flex: 0 0 auto;
+  width: 80px;
+  height: 80px;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.lightbox-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lightbox-thumb:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.lightbox-thumb.active {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 767.98px) {
   .thumb-btn {
     width: 64px;
     height: 64px;
+  }
+
+  .lightbox-container {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .lightbox-nav {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .lightbox-prev {
+    left: 10px;
+  }
+
+  .lightbox-next {
+    right: 10px;
+  }
+
+  .lightbox-close {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+  }
+
+  .lightbox-thumb {
+    width: 60px;
+    height: 60px;
+  }
+
+  .lightbox-thumbnails {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lightbox-image-wrapper {
+    max-height: 70vh;
+  }
+
+  .lightbox-nav {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
+  }
+
+  .lightbox-prev {
+    left: 5px;
+  }
+
+  .lightbox-next {
+    right: 5px;
   }
 }
 </style>
