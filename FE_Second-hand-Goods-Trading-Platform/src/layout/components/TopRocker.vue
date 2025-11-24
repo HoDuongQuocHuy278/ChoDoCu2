@@ -234,10 +234,12 @@ function checkAuth() {
   if (isLoggedIn.value) {
     loadUserInfo()
     loadCart()
-    // Only start polling if user just logged in
+    // Only start polling if user just logged in (tránh duplicate intervals)
     if (!wasLoggedIn) {
+      // Load ngay lần đầu
       loadNotifications()
       loadUnreadMessagesCount()
+      // Start polling (sẽ tự quản lý interval)
       startNotificationPolling()
       startMessagesPolling()
     }
@@ -601,7 +603,8 @@ let cleanupCartEvents = null
 let notificationInterval = null
 let isLoadingNotifications = false
 let lastNotificationLoad = 0
-const NOTIFICATION_CACHE_TIME = 5000 // Cache for 5 seconds
+const NOTIFICATION_CACHE_TIME = 30000 // Cache for 30 seconds (tăng từ 5s)
+const NOTIFICATION_POLL_INTERVAL = 120000 // Poll every 2 minutes (tăng từ 60s)
 
 function startNotificationPolling() {
   if (!isLoggedIn.value) return
@@ -612,8 +615,13 @@ function startNotificationPolling() {
   // Load notifications immediately
   loadNotifications()
   
-  // Poll every 60 seconds (reduced frequency)
+  // Poll với interval dài hơn và chỉ khi tab đang active
   notificationInterval = setInterval(() => {
+    // Chỉ poll khi tab đang visible (tiết kiệm tài nguyên)
+    if (document.hidden) {
+      return
+    }
+    
     if (isLoggedIn.value && !isLoadingNotifications) {
       const now = Date.now()
       // Only load if cache expired
@@ -621,7 +629,25 @@ function startNotificationPolling() {
         loadNotifications()
       }
     }
-  }, 60000) // Increased from 30s to 60s
+  }, NOTIFICATION_POLL_INTERVAL)
+  
+  // Reload khi tab trở lại active (sau khi user quay lại)
+  const handleVisibilityChange = () => {
+    if (!document.hidden && isLoggedIn.value) {
+      const now = Date.now()
+      // Nếu đã quá cache time, reload ngay
+      if (now - lastNotificationLoad > NOTIFICATION_CACHE_TIME) {
+        loadNotifications()
+      }
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // Lưu cleanup function
+  if (!window._notificationVisibilityHandler) {
+    window._notificationVisibilityHandler = handleVisibilityChange
+  }
 }
 
 function stopNotificationPolling() {
@@ -629,13 +655,20 @@ function stopNotificationPolling() {
     clearInterval(notificationInterval)
     notificationInterval = null
   }
+  
+  // Remove visibility change listener
+  if (window._notificationVisibilityHandler) {
+    document.removeEventListener('visibilitychange', window._notificationVisibilityHandler)
+    window._notificationVisibilityHandler = null
+  }
 }
 
 // Polling messages
 let messagesInterval = null
 let isLoadingMessages = false
 let lastMessagesLoad = 0
-const MESSAGES_CACHE_TIME = 5000 // Cache for 5 seconds
+const MESSAGES_CACHE_TIME = 30000 // Cache for 30 seconds (tăng từ 5s)
+const MESSAGES_POLL_INTERVAL = 120000 // Poll every 2 minutes (tăng từ 60s)
 
 function startMessagesPolling() {
   if (!isLoggedIn.value) return
@@ -646,8 +679,13 @@ function startMessagesPolling() {
   // Load unread messages count immediately
   loadUnreadMessagesCount()
   
-  // Poll every 60 seconds (reduced frequency)
+  // Poll với interval dài hơn và chỉ khi tab đang active
   messagesInterval = setInterval(() => {
+    // Chỉ poll khi tab đang visible (tiết kiệm tài nguyên)
+    if (document.hidden) {
+      return
+    }
+    
     if (isLoggedIn.value && !isLoadingMessages) {
       const now = Date.now()
       // Only load if cache expired
@@ -655,13 +693,37 @@ function startMessagesPolling() {
         loadUnreadMessagesCount()
       }
     }
-  }, 60000) // Increased from 20s to 60s
+  }, MESSAGES_POLL_INTERVAL)
+  
+  // Reload khi tab trở lại active (sau khi user quay lại)
+  const handleVisibilityChange = () => {
+    if (!document.hidden && isLoggedIn.value) {
+      const now = Date.now()
+      // Nếu đã quá cache time, reload ngay
+      if (now - lastMessagesLoad > MESSAGES_CACHE_TIME) {
+        loadUnreadMessagesCount()
+      }
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // Lưu cleanup function
+  if (!window._messagesVisibilityHandler) {
+    window._messagesVisibilityHandler = handleVisibilityChange
+  }
 }
 
 function stopMessagesPolling() {
   if (messagesInterval) {
     clearInterval(messagesInterval)
     messagesInterval = null
+  }
+  
+  // Remove visibility change listener
+  if (window._messagesVisibilityHandler) {
+    document.removeEventListener('visibilitychange', window._messagesVisibilityHandler)
+    window._messagesVisibilityHandler = null
   }
 }
 

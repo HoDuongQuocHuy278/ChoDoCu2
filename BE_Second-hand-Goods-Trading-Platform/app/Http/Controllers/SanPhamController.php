@@ -474,13 +474,15 @@ class SanPhamController extends Controller
                     foreach ($files as $file) {
                         $filename = $file->hashName();
                         $file->storeAs('products', $filename);
-                        $imageUrls[] = url('/storage/products/' . $filename);
+                        // Lưu relative path thay vì absolute URL để tương thích khi chia sẻ qua mạng
+                        $imageUrls[] = '/storage/products/' . $filename;
                     }
                 } else {
                     // Upload 1 file
                     $filename = $files->hashName();
                     $files->storeAs('products', $filename);
-                    $imageUrls[] = url('/storage/products/' . $filename);
+                    // Lưu relative path thay vì absolute URL để tương thích khi chia sẻ qua mạng
+                    $imageUrls[] = '/storage/products/' . $filename;
                 }
 
                 // Luôn normalize thành JSON array string (kể cả 1 ảnh)
@@ -794,13 +796,15 @@ class SanPhamController extends Controller
                     foreach ($files as $file) {
                         $filename = $file->hashName();
                         $file->storeAs('products', $filename);
-                        $imageUrls[] = url('/storage/products/' . $filename);
+                        // Lưu relative path thay vì absolute URL để tương thích khi chia sẻ qua mạng
+                        $imageUrls[] = '/storage/products/' . $filename;
                     }
                 } else {
                     // Upload 1 file
                     $filename = $files->hashName();
                     $files->storeAs('products', $filename);
-                    $imageUrls[] = url('products/' . $filename);
+                    // Lưu relative path thay vì absolute URL để tương thích khi chia sẻ qua mạng
+                    $imageUrls[] = '/storage/products/' . $filename;
                 }
 
                 // Normalize thành JSON array string

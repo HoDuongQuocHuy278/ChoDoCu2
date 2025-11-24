@@ -222,7 +222,8 @@
   import axios from 'axios'
   
   const router = useRouter()
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/client'
+  // Sử dụng relative URL để hoạt động với Vite proxy khi chia sẻ qua mạng
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/client'
   
   const cats = ref([])
   const loadingCategories = ref(false)
@@ -244,6 +245,17 @@
   const fileInput = ref(null)
   const dragOver = ref(false)
   const images = ref([]) // {id, file, url}
+  
+  // Hàm tạo unique ID (tương thích với mọi trình duyệt)
+  function generateId() {
+    // Sử dụng crypto.randomUUID nếu có, nếu không thì dùng fallback
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID()
+    }
+    // Fallback: tạo ID đơn giản
+    return 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+  }
+  
   function onPick(e){ addFiles(Array.from(e.target.files||[])); e.target.value='' }
   function onDrop(e){ dragOver.value=false; addFiles(Array.from(e.dataTransfer.files||[])) }
   function addFiles(files){
@@ -251,7 +263,7 @@
       if(!f.type.startsWith('image/')) continue
       if(f.size > 5*1024*1024) continue
       const url = URL.createObjectURL(f)
-      images.value.push({ id: crypto.randomUUID(), file: f, url })
+      images.value.push({ id: generateId(), file: f, url })
     }
     touch('images')
   }

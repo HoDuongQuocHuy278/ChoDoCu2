@@ -533,3 +533,4 @@ chats (1) ──────── (N) chat_messages
 **Tài liệu này được tạo tự động từ Laravel Migrations**  
 **Cập nhật lần cuối**: 2025
 
+

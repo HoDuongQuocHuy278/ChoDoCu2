@@ -130,18 +130,12 @@ class SanPham extends Model
             }
             
             // Nếu là path (bắt đầu bằng /storage/ hoặc storage/)
+            // Giữ nguyên relative path để tương thích khi chia sẻ qua mạng
             if (strpos($trimmed, '/storage/') === 0 || strpos($trimmed, 'storage/') === 0) {
-                // Convert path thành full URL
-                $appUrl = config('app.url', 'http://127.0.0.1:8000');
-                $path = ltrim($trimmed, '/');
-                if (strpos($path, 'storage/') === 0) {
-                    $path = '/' . $path;
-                } else {
-                    $path = '/' . $path;
-                }
-                $fullUrl = rtrim($appUrl, '/') . $path;
-                // Chuyển thành array với 1 phần tử
-                return json_encode([$fullUrl], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                // Đảm bảo path bắt đầu bằng /
+                $path = strpos($trimmed, '/') === 0 ? $trimmed : '/' . $trimmed;
+                // Chuyển thành array với 1 phần tử (giữ relative path)
+                return json_encode([$path], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
             
             // Trường hợp khác, giữ nguyên
@@ -152,7 +146,46 @@ class SanPham extends Model
     }
 
     /**
+     * Convert relative path thành absolute URL dựa trên request hiện tại
+     * Giúp hình ảnh hiển thị đúng khi chia sẻ qua mạng
+     * 
+     * @param string $path - Relative path (e.g., '/storage/products/image.jpg')
+     * @return string - Absolute URL
+     */
+    private function convertPathToUrl($path)
+    {
+        // Nếu đã là absolute URL (http:// hoặc https://), trả về nguyên
+        if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) {
+            return $path;
+        }
+        
+        // Nếu là relative path, convert thành absolute URL dựa trên request hiện tại
+        if (strpos($path, '/') === 0) {
+            // Lấy scheme và host từ request hiện tại
+            $request = request();
+            if ($request) {
+                $scheme = $request->getScheme();
+                $host = $request->getHost();
+                $port = $request->getPort();
+                
+                // Thêm port nếu không phải port mặc định
+                $baseUrl = $scheme . '://' . $host;
+                if ($port && $port != 80 && $port != 443) {
+                    $baseUrl .= ':' . $port;
+                }
+                
+                return $baseUrl . $path;
+            }
+        }
+        
+        // Fallback: dùng config APP_URL
+        $appUrl = config('app.url', 'http://127.0.0.1:8000');
+        return rtrim($appUrl, '/') . '/' . ltrim($path, '/');
+    }
+
+    /**
      * Lấy danh sách ảnh dưới dạng array
+     * Tự động convert relative paths thành absolute URLs
      * 
      * @return array
      */
@@ -162,6 +195,8 @@ class SanPham extends Model
             return [];
         }
 
+        $images = [];
+
         // Nếu là string, thử decode JSON
         if (is_string($this->hinh_anh)) {
             $trimmed = trim($this->hinh_anh);
@@ -170,26 +205,27 @@ class SanPham extends Model
             if (strpos($trimmed, '[') === 0 && substr($trimmed, -1) === ']') {
                 $decoded = json_decode($trimmed, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                    return array_filter($decoded, function($item) {
+                    $images = array_filter($decoded, function($item) {
                         return !empty($item) && is_string($item);
                     });
                 }
+            } else {
+                // Nếu là URL hoặc path đơn giản
+                if (!empty($trimmed)) {
+                    $images = [$trimmed];
+                }
             }
-            
-            // Nếu là URL hoặc path đơn giản
-            if (!empty($trimmed)) {
-                return [$trimmed];
-            }
-        }
-
-        // Nếu là array (không nên xảy ra vì database lưu string)
-        if (is_array($this->hinh_anh)) {
-            return array_filter($this->hinh_anh, function($item) {
+        } elseif (is_array($this->hinh_anh)) {
+            // Nếu là array (không nên xảy ra vì database lưu string)
+            $images = array_filter($this->hinh_anh, function($item) {
                 return !empty($item) && is_string($item);
             });
         }
 
-        return [];
+        // Convert tất cả relative paths thành absolute URLs
+        return array_map(function($image) {
+            return $this->convertPathToUrl($image);
+        }, $images);
     }
 
     /**
