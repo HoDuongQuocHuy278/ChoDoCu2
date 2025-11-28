@@ -14,10 +14,14 @@ class VNPayService
 
     public function __construct()
     {
+        \Log::info("DEBUG_RETURN_URL", [
+            "env" => env("VNPAY_RETURN_URL"),
+            "return" => $this->vnp_Returnurl
+        ]);
         // CHỈ DÙNG SANDBOX (TEST) - KHÔNG DÙNG PRODUCTION
         $this->vnp_TmnCode = env('VNPAY_TMN_CODE', '');
         $this->vnp_HashSecret = env('VNPAY_HASH_SECRET', '');
-        
+
         // FORCE SANDBOX URL - Không cho phép dùng production URL
         $envUrl = env('VNPAY_URL', '');
         if (empty($envUrl) || strpos($envUrl, 'www.vnpayment.vn') !== false) {
@@ -26,9 +30,9 @@ class VNPayService
         } else {
             $this->vnp_Url = $envUrl;
         }
-        
+
         $this->vnp_Returnurl = env('VNPAY_RETURN_URL', '');
-        
+
         // FORCE SANDBOX API URL
         $envApiUrl = env('VNPAY_API_URL', '');
         if (empty($envApiUrl) || strpos($envApiUrl, 'www.vnpayment.vn') !== false) {
@@ -37,12 +41,19 @@ class VNPayService
         } else {
             $this->vnp_apiUrl = $envApiUrl;
         }
-        
+        \Log::info("DEBUG_RETURN_URL", [
+            "env" => env("VNPAY_RETURN_URL"),
+            "return" => $this->vnp_Returnurl
+        ]);
+
         // Log để debug
         \Log::info('VNPayService Initialized', [
             'url' => $this->vnp_Url,
             'api_url' => $this->vnp_apiUrl,
             'is_sandbox' => strpos($this->vnp_Url, 'sandbox') !== false,
+            'tmn_code' => $this->vnp_TmnCode,
+            'return_url' => $this->vnp_Returnurl,
+            'has_secret' => !empty($this->vnp_HashSecret),
         ]);
     }
 
@@ -51,9 +62,31 @@ class VNPayService
      */
     public function createPaymentUrl(array $params): string
     {
+        // Validate required fields
+        if (empty($this->vnp_TmnCode)) {
+            throw new \Exception('VNPAY_TMN_CODE is not configured');
+        }
+        if (empty($this->vnp_HashSecret)) {
+            throw new \Exception('VNPAY_HASH_SECRET is not configured');
+        }
+        if (empty($this->vnp_Returnurl)) {
+            throw new \Exception('VNPAY_RETURN_URL is not configured');
+        }
+
         $vnp_TxnRef = $params['txn_ref'] ?? $this->generateTxnRef();
         $vnp_Amount = (int)($params['amount'] * 100); // VNPay yêu cầu số tiền tính bằng xu
+
+        // Validate amount
+        if ($vnp_Amount < 1000) { // Minimum 10,000 VND
+            throw new \Exception('Amount must be at least 10,000 VND');
+        }
+
         $vnp_OrderInfo = $params['order_info'] ?? 'Thanh toan don hang #' . $vnp_TxnRef;
+        // Limit order info length (max 255 chars)
+        if (strlen($vnp_OrderInfo) > 255) {
+            $vnp_OrderInfo = substr($vnp_OrderInfo, 0, 252) . '...';
+        }
+
         $vnp_OrderType = $params['order_type'] ?? 'other';
         $vnp_Locale = $params['locale'] ?? 'vn';
         $vnp_BankCode = $params['bank_code'] ?? '';
@@ -84,7 +117,7 @@ class VNPayService
         $query = "";
         $i = 0;
         $hashdata = "";
-        
+
         foreach ($inputData as $key => $value) {
             if ($i == 1) {
                 $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
@@ -96,11 +129,24 @@ class VNPayService
         }
 
         $vnp_Url = $this->vnp_Url . "?" . $query;
-        
+
         if (!empty($this->vnp_HashSecret)) {
             $vnpSecureHash = hash_hmac('sha512', $hashdata, $this->vnp_HashSecret);
-            $vnp_Url .= '&vnp_SecureHash=' . $vnpSecureHash;
+            $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+        } else {
+            \Log::warning('VNPayService: HashSecret is empty!');
         }
+
+        // Log để debug
+        \Log::info('VNPay Payment URL Created', [
+            'tmn_code' => $this->vnp_TmnCode,
+            'amount' => $vnp_Amount,
+            'txn_ref' => $vnp_TxnRef,
+            'return_url' => $this->vnp_Returnurl,
+            'hashdata' => $hashdata,
+            'has_hash' => !empty($this->vnp_HashSecret),
+            'payment_url_length' => strlen($vnp_Url),
+        ]);
 
         return $vnp_Url;
     }
@@ -112,7 +158,7 @@ class VNPayService
     {
         unset($inputData['vnp_SecureHash']);
         ksort($inputData);
-        
+
         $i = 0;
         $hashData = "";
         foreach ($inputData as $key => $value) {
@@ -125,7 +171,7 @@ class VNPayService
         }
 
         $secureHash = hash_hmac('sha512', $hashData, $this->vnp_HashSecret);
-        
+
         return $secureHash === $vnp_SecureHash;
     }
 
@@ -187,7 +233,7 @@ class VNPayService
     public function callAPI(string $method, string $endpoint, array $data): array
     {
         $url = $this->vnp_apiUrl . $endpoint;
-        
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -225,7 +271,7 @@ class VNPayService
 
     /**
      * Hoàn tiền giao dịch (Refund)
-     * 
+     *
      * @param array $params
      * @return array
      */
@@ -292,7 +338,7 @@ class VNPayService
 
     /**
      * Tra cứu giao dịch (Query Transaction)
-     * 
+     *
      * @param array $params
      * @return array
      */

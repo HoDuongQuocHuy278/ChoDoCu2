@@ -163,7 +163,7 @@
 
     <transition name="chat">
       <div v-show="showChat" class="chat-widget" role="dialog">
-        <div class="chat-header">
+        <!-- <div class="chat-header">
           <div class="chat-info">
             <div class="chat-avatar">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -184,7 +184,7 @@
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
-        </div>
+        </div> -->
 
         <div id="chatbox" ref="chatboxRef" class="chat-messages">
           <div v-if="messages.length === 0" class="welcome">
@@ -374,7 +374,8 @@ export default {
       this.scrollToBottom()
 
       try {
-        const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || 'http://127.0.0.1:5000'
+        //đổi api
+        const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || 'http://192.168.1.229:5000'
         const res = await fetch(`${chatbotUrl}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

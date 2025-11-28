@@ -104,6 +104,11 @@ const routes = [
     component: () => import("../components/PaymentCallback/index.vue"),
   },
   {
+    path: "/thong-bao",
+    name: "notification",
+    component: () => import("../components/ThongBao/index.vue"),
+  },
+  {
     path: "/admin/quan-ly-nguoi-dung",
     name: "admin.qlnguoidung",
     component: () => import("../components/admin/QuanLyNguoiDung/index.vue"),

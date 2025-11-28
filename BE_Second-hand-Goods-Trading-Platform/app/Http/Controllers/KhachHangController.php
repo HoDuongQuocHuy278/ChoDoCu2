@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
 
 class KhachHangController extends Controller
@@ -28,7 +29,7 @@ class KhachHangController extends Controller
             'ho_va_ten'     => $request->ho_va_ten,
             'email'         => $request->email,
             'so_dien_thoai' => $request->so_dien_thoai,
-            'password'      => '123456',
+            'password'      => Hash::make('123456'),
             'cccd'          => $request->cccd,
             'ngay_sinh'     => $request->ngay_sinh,
             'is_block'      => 0,
@@ -45,7 +46,7 @@ class KhachHangController extends Controller
             'ho_va_ten'     => $request->ho_va_ten,
             'email'         => $request->email,
             'so_dien_thoai' => $request->so_dien_thoai,
-            'password'      => $request->password,
+            'password'      => Hash::make($request->password),
             'cccd'          => $request->cccd,
             'ngay_sinh'     => $request->ngay_sinh,
             'is_block'      => $request->is_block,
@@ -91,10 +92,24 @@ class KhachHangController extends Controller
 
     public function dangNhap(Request $request)
     {
-        $check = KhachHang::where('email', $request->email)
-            ->where('password', $request->password)->first();
-        if ($check) {
-            if ($check->is_active == 0) {
+        $user = KhachHang::where('email', $request->email)->first();
+
+        if ($user) {
+            // Check password
+            if (Hash::check($request->password, $user->password)) {
+                // Password match (Hashed)
+            } elseif ($user->password === $request->password) {
+                // Password match (Plain text - Legacy) -> Update to Hash
+                $user->password = Hash::make($request->password);
+                $user->save();
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tài khoản sai email hoặc password',
+                ]);
+            }
+
+            if ($user->is_active == 0) {
                 return response()->json([
                     'status' => 0,
                     'message' => 'Tài khoản chưa được kích hoạt',
@@ -103,7 +118,7 @@ class KhachHangController extends Controller
                 return response()->json([
                     'status' => true,
                     'message' => 'Đăng nhập thành công',
-                    'token' => $check->createToken('key_client')->plainTextToken,
+                    'token' => $user->createToken('key_client')->plainTextToken,
                 ]);
             }
         } else {
@@ -150,7 +165,7 @@ class KhachHangController extends Controller
             'ho_va_ten'     => $request->ho_va_ten,
             'email'         => $request->email,
             'so_dien_thoai' => $request->so_dien_thoai,
-            'password'      => $request->password,
+            'password'      => Hash::make($request->password),
             'cccd'          => $request->cccd,
             'ngay_sinh'     => $request->ngay_sinh,
             'is_block'      => 0,
@@ -161,7 +176,8 @@ class KhachHangController extends Controller
         $tieu_de = "Kích hoạt tài khoản";
         $view = "kichHoatTK";
         $noi_dung['ho_va_ten'] = $khachHang->ho_va_ten;
-        $noi_dung['link'] = "http://localhost:5173/client/kich-hoat/" . $key;
+        // đổi api
+        $noi_dung['link'] = "http://192.168.1.229:5173//client/kich-hoat/" . $key;
         Mail::to($request->email)->send(new MasterMail($tieu_de, $view, $noi_dung));
 
         return response()->json([
@@ -210,7 +226,7 @@ class KhachHangController extends Controller
         }
 
         $user->update([
-            'password'      =>  $request->password,
+            'password'      =>  Hash::make($request->password),
             'hash_reset'    =>  null
         ]);
 
@@ -237,7 +253,7 @@ class KhachHangController extends Controller
         $user = Auth::guard('sanctum')->user();
         if ($user && $user instanceof \App\Models\KhachHang) {
 
-            if ($user->password != $request->password) {
+            if (!Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'status'    =>  0,
                     'message'   =>  'Mật khẩu hiện tại không đúng. Vui lòng nhập lại.'
@@ -249,7 +265,7 @@ class KhachHangController extends Controller
                         'message'   =>  'Mật khẩu hiện mới và xác nhận không khớp. Vui lòng nhập lại.'
                     ]);
                 } else {
-                    $user->password = $request->new_password;
+                    $user->password = Hash::make($request->new_password);
                     $user->save();
 
                     return response()->json([
@@ -309,7 +325,7 @@ class KhachHangController extends Controller
     public function dangKyBan(Request $request)
     {
         $user = Auth::guard('sanctum')->user();
-        
+
         if (!$user || !($user instanceof KhachHang)) {
             return response()->json([
                 'status' => false,
@@ -351,7 +367,7 @@ class KhachHangController extends Controller
     public function checkSellerStatus()
     {
         $user = Auth::guard('sanctum')->user();
-        
+
         if (!$user || !($user instanceof KhachHang)) {
             return response()->json([
                 'status' => false,
@@ -479,8 +495,23 @@ class KhachHangController extends Controller
             ], 401);
         }
 
+        // Kiểm tra thời gian đổi mật khẩu gần nhất
+        if ($user->last_password_change_at) {
+            $lastChange = \Carbon\Carbon::parse($user->last_password_change_at);
+            $now = \Carbon\Carbon::now();
+            $diffInMinutes = $now->diffInMinutes($lastChange);
+
+            if ($diffInMinutes < 30) {
+                $remainingMinutes = 30 - $diffInMinutes;
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Bạn vừa đổi mật khẩu. Vui lòng thử lại sau ' . $remainingMinutes . ' phút nữa.',
+                ], 429); // 429 Too Many Requests
+            }
+        }
+
         // Kiểm tra mật khẩu hiện tại
-        if ($user->password != $request->current_password) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Mật khẩu hiện tại không đúng',
@@ -495,7 +526,8 @@ class KhachHangController extends Controller
             ], 400);
         }
 
-        $user->password = $request->new_password;
+        $user->password = Hash::make($request->new_password);
+        $user->last_password_change_at = now(); // Cập nhật thời gian đổi
         $user->save();
 
         return response()->json([

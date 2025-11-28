@@ -32,6 +32,10 @@ class KhachHang extends Authenticatable
         'dia_chi_so_dien_thoai',
         'dia_chi_chi_tiet',
         'gioi_tinh',
+        'last_password_change_at',
     ];
 
+    protected $casts = [
+        'last_password_change_at' => 'datetime',
+    ];
 }

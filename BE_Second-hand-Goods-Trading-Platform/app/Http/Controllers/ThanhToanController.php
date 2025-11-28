@@ -16,6 +16,8 @@ class ThanhToanController extends Controller
     {
         $data = $request->validate([
             'order_id' => 'nullable|exists:don_hangs,id',
+            'order_ids' => 'nullable|array',
+            'order_ids.*' => 'exists:don_hangs,id',
             'amount' => 'required|numeric|min:1000',
             'order_info' => 'nullable|string|max:255',
             'bank_code' => 'nullable|string|max:50',
@@ -25,16 +27,45 @@ class ThanhToanController extends Controller
         try {
             $vnpayService = new VNPayService();
 
+            // Xử lý order_ids (hỗ trợ thanh toán nhiều đơn hàng)
+            $orderIds = [];
+            if (!empty($data['order_ids']) && is_array($data['order_ids'])) {
+                $orderIds = $data['order_ids'];
+            } elseif (!empty($data['order_id'])) {
+                $orderIds = [$data['order_id']];
+            }
+
             // Tạo mã giao dịch tham chiếu
-            $vnp_TxnRef = $data['order_id'] 
-                ? 'ORDER_' . $data['order_id'] . '_' . time() 
-                : 'TXN_' . time() . '_' . rand(1000, 9999);
+            if (!empty($orderIds)) {
+                if (count($orderIds) > 1) {
+                    // Nhiều đơn hàng: dùng format CART
+                    $vnp_TxnRef = 'CART_' . time() . '_' . rand(1000, 9999);
+                } else {
+                    // Một đơn hàng: dùng format ORDER
+                    $vnp_TxnRef = 'ORDER_' . $orderIds[0] . '_' . time();
+                }
+            } else {
+                $vnp_TxnRef = 'TXN_' . time() . '_' . rand(1000, 9999);
+            }
+
+            // Tạo order_info
+            $orderInfo = $data['order_info'];
+            if (!$orderInfo) {
+                if (count($orderIds) > 1) {
+                    $orderInfo = 'Thanh toán ' . count($orderIds) . ' đơn hàng';
+                } elseif (!empty($orderIds)) {
+                    $order = DonHang::find($orderIds[0]);
+                    $orderInfo = 'Thanh toán đơn hàng #' . ($order ? $order->ma_don_hang : $orderIds[0]);
+                } else {
+                    $orderInfo = 'Thanh toán đơn hàng #' . $vnp_TxnRef;
+                }
+            }
 
             // Chuẩn bị thông tin thanh toán
             $paymentParams = [
                 'txn_ref' => $vnp_TxnRef,
                 'amount' => (float)$data['amount'],
-                'order_info' => $data['order_info'] ?? 'Thanh toán đơn hàng #' . ($data['order_id'] ?? $vnp_TxnRef),
+                'order_info' => $orderInfo,
                 'order_type' => 'other',
                 'locale' => $data['locale'] ?? 'vn',
                 'bank_code' => $data['bank_code'] ?? '',
@@ -44,17 +75,23 @@ class ThanhToanController extends Controller
             // Tạo URL thanh toán
             $paymentUrl = $vnpayService->createPaymentUrl($paymentParams);
 
-            // Cập nhật payment_payload nếu có order_id
-            if (isset($data['order_id'])) {
-                $order = DonHang::find($data['order_id']);
-                if ($order) {
-                    $order->payment_payload = json_encode([
-                        'payment_url' => $paymentUrl,
-                        'txn_ref' => $vnp_TxnRef,
-                        'amount' => $data['amount'],
-                        'created_at' => now()->toDateTimeString(),
-                    ]);
-                    $order->save();
+            // Cập nhật payment_payload cho tất cả các đơn hàng
+            if (!empty($orderIds)) {
+                $paymentPayload = [
+                    'payment_url' => $paymentUrl,
+                    'txn_ref' => $vnp_TxnRef,
+                    'amount' => $data['amount'],
+                    'order_ids' => $orderIds,
+                    'is_cart_payment' => count($orderIds) > 1,
+                    'created_at' => now()->toDateTimeString(),
+                ];
+
+                foreach ($orderIds as $orderId) {
+                    $order = DonHang::find($orderId);
+                    if ($order) {
+                        $order->payment_payload = json_encode($paymentPayload);
+                        $order->save();
+                    }
                 }
             }
 
@@ -94,6 +131,8 @@ class ThanhToanController extends Controller
     {
         $data = $request->validate([
             'order_id' => 'nullable|exists:don_hangs,id',
+            'order_ids' => 'nullable|array',
+            'order_ids.*' => 'exists:don_hangs,id',
             'amount' => 'required|numeric|min:1000',
             'order_info' => 'nullable|string|max:255',
             'customer_name' => 'nullable|string|max:255',
@@ -102,13 +141,46 @@ class ThanhToanController extends Controller
         ]);
 
         try {
+            // Xử lý order_ids (hỗ trợ thanh toán nhiều đơn hàng)
+            $orderIds = [];
+            if (!empty($data['order_ids']) && is_array($data['order_ids'])) {
+                $orderIds = $data['order_ids'];
+            } elseif (!empty($data['order_id'])) {
+                $orderIds = [$data['order_id']];
+            }
+
+            // Tạo order_id cho MBBank API
+            $mbbankOrderId = '';
+            if (!empty($orderIds)) {
+                if (count($orderIds) > 1) {
+                    $mbbankOrderId = 'CART_' . time() . '_' . rand(1000, 9999);
+                } else {
+                    $mbbankOrderId = 'ORDER_' . $orderIds[0];
+                }
+            } else {
+                $mbbankOrderId = 'ORDER_' . time() . '_' . rand(1000, 9999);
+            }
+
+            // Tạo description
+            $description = $data['order_info'];
+            if (!$description) {
+                if (count($orderIds) > 1) {
+                    $description = 'Thanh toán ' . count($orderIds) . ' đơn hàng';
+                } elseif (!empty($orderIds)) {
+                    $order = DonHang::find($orderIds[0]);
+                    $description = 'Thanh toán đơn hàng #' . ($order ? $order->ma_don_hang : $orderIds[0]);
+                } else {
+                    $description = 'Thanh toán đơn hàng';
+                }
+            }
+
             // Gọi API MBBank
             $mbbankApiUrl = 'https://api-mb.midstack.io.vn/api/transactions';
 
             $payload = [
                 'amount' => (int)$data['amount'],
-                'description' => $data['order_info'] ?? 'Thanh toán đơn hàng #' . ($data['order_id'] ?? ''),
-                'order_id' => $data['order_id'] ? 'ORDER_' . $data['order_id'] : 'ORDER_' . time() . '_' . rand(1000, 9999),
+                'description' => $description,
+                'order_id' => $mbbankOrderId,
             ];
 
             // Thêm thông tin khách hàng nếu có
@@ -180,15 +252,22 @@ class ThanhToanController extends Controller
                 ], 500);
             }
 
-            // Cập nhật payment_payload nếu có order_id
-            if (isset($data['order_id'])) {
-                $order = DonHang::find($data['order_id']);
-                if ($order) {
-                    $order->payment_payload = json_encode([
-                        'payment_data' => $responseData,
-                        'created_at' => now()->toDateTimeString(),
-                    ]);
-                    $order->save();
+            // Cập nhật payment_payload cho tất cả các đơn hàng
+            if (!empty($orderIds)) {
+                $paymentPayload = [
+                    'payment_data' => $responseData,
+                    'order_id' => $mbbankOrderId,
+                    'order_ids' => $orderIds,
+                    'is_cart_payment' => count($orderIds) > 1,
+                    'created_at' => now()->toDateTimeString(),
+                ];
+
+                foreach ($orderIds as $orderId) {
+                    $order = DonHang::find($orderId);
+                    if ($order) {
+                        $order->payment_payload = json_encode($paymentPayload);
+                        $order->save();
+                    }
                 }
             }
 
@@ -262,118 +341,160 @@ class ThanhToanController extends Controller
             ]);
 
             if ($isValidHash) {
-                // Tìm order từ TxnRef
-                if (preg_match('/ORDER_(\d+)_/', $callbackData['txn_ref'], $matches)) {
-                    $orderId = $matches[1];
-                    $order = DonHang::find($orderId);
+                // Lưu thông tin thanh toán vào payment_payload
+                $paymentInfo = [
+                    'transaction_no' => $callbackData['transaction_no'],
+                    'bank_code' => $callbackData['bank_code'],
+                    'card_type' => $callbackData['card_type'],
+                    'pay_date' => $callbackData['pay_date'],
+                    'amount' => $callbackData['amount'],
+                    'response_code' => $callbackData['response_code'],
+                    'transaction_status' => $callbackData['transaction_status'],
+                    'callback_at' => now()->toDateTimeString(),
+                ];
 
-                    if ($order) {
-                        // Lưu thông tin thanh toán vào payment_payload
-                        $paymentInfo = [
-                            'transaction_no' => $callbackData['transaction_no'],
-                            'bank_code' => $callbackData['bank_code'],
-                            'card_type' => $callbackData['card_type'],
-                            'pay_date' => $callbackData['pay_date'],
-                            'amount' => $callbackData['amount'],
-                            'response_code' => $callbackData['response_code'],
-                            'transaction_status' => $callbackData['transaction_status'],
-                            'callback_at' => now()->toDateTimeString(),
-                        ];
+                // Xác định các đơn hàng cần cập nhật
+                $ordersToUpdate = [];
+                $isCartPayment = false;
 
-                        // Kiểm tra thanh toán thành công
-                        if ($vnpayService->isPaymentSuccess(
-                            $callbackData['response_code'],
-                            $callbackData['transaction_status']
-                        )) {
-                            // Thanh toán thành công
-                            $order->payment_status = 'paid';
-                            $order->status = 'processing';
-
-                            // Cập nhật payment_payload
-                            $existingPayload = json_decode($order->payment_payload, true) ?? [];
-                            $existingPayload['vnpay_callback'] = array_merge($paymentInfo, ['status' => 'success']);
-                            $order->payment_payload = json_encode($existingPayload);
-                            $order->save();
-
-                            \Log::info('VNPAY Callback - Payment Success', [
-                                'order_id' => $order->id,
-                                'order_code' => $order->ma_don_hang,
-                            ]);
-
-                            // Tạo thông báo cho buyer
-                            if ($order->khach_hang_id) {
-                                try {
-                                    \App\Http\Controllers\NotificationController::notifyOrder(
-                                        $order->khach_hang_id,
-                                        $order->ma_don_hang,
-                                        'paid',
-                                        "/don-mua"
-                                    );
-                                } catch (\Exception $e) {
-                                    \Log::error('VNPAY Callback - Failed to notify buyer', [
-                                        'error' => $e->getMessage(),
-                                    ]);
+                // Kiểm tra xem có phải thanh toán nhiều đơn hàng (CART) không
+                if (preg_match('/^CART_/', $callbackData['txn_ref'])) {
+                    // Tìm đơn hàng có txn_ref này trong payment_payload
+                    $firstOrder = DonHang::where('payment_payload', 'like', '%' . $callbackData['txn_ref'] . '%')->first();
+                    if ($firstOrder) {
+                        $existingPayload = json_decode($firstOrder->payment_payload, true) ?? [];
+                        if (!empty($existingPayload['order_ids']) && is_array($existingPayload['order_ids'])) {
+                            $orderIds = $existingPayload['order_ids'];
+                            $isCartPayment = true;
+                            foreach ($orderIds as $orderId) {
+                                $order = DonHang::find($orderId);
+                                if ($order) {
+                                    $ordersToUpdate[] = $order;
                                 }
                             }
+                        }
+                    }
+                } elseif (preg_match('/ORDER_(\d+)_/', $callbackData['txn_ref'], $matches)) {
+                    // Thanh toán đơn hàng đơn lẻ
+                    $orderId = $matches[1];
+                    $order = DonHang::find($orderId);
+                    if ($order) {
+                        $ordersToUpdate[] = $order;
+                    }
+                }
 
-                            // Tạo thông báo cho seller
+                // Kiểm tra thanh toán thành công
+                $isPaymentSuccess = $vnpayService->isPaymentSuccess(
+                    $callbackData['response_code'],
+                    $callbackData['transaction_status']
+                );
+
+                if ($isPaymentSuccess && !empty($ordersToUpdate)) {
+                    // Cập nhật tất cả các đơn hàng
+                    foreach ($ordersToUpdate as $order) {
+                        $order->payment_status = 'paid';
+                        $order->status = 'processing';
+
+                        // Cập nhật payment_payload
+                        $existingPayload = json_decode($order->payment_payload, true) ?? [];
+                        $existingPayload['vnpay_callback'] = array_merge($paymentInfo, ['status' => 'success']);
+                        $order->payment_payload = json_encode($existingPayload);
+                        $order->save();
+
+                        \Log::info('VNPAY Callback - Payment Success', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->ma_don_hang,
+                            'is_cart_payment' => $isCartPayment,
+                        ]);
+
+                        // Tạo thông báo cho buyer
+                        if ($order->khach_hang_id) {
                             try {
-                                $product = $order->sanPham;
-                                if ($product && $product->khach_hang_id) {
-                                    \App\Http\Controllers\NotificationController::notifyOrder(
-                                        $product->khach_hang_id,
-                                        $order->ma_don_hang,
-                                        'paid',
-                                        "/nguoi-ban/quan-ly-don-hang"
-                                    );
-                                }
+                                \App\Http\Controllers\NotificationController::notifyOrder(
+                                    $order->khach_hang_id,
+                                    $order->ma_don_hang,
+                                    'paid',
+                                    "/don-mua"
+                                );
                             } catch (\Exception $e) {
-                                \Log::error('VNPAY Callback - Failed to notify seller', [
+                                \Log::error('VNPAY Callback - Failed to notify buyer', [
                                     'error' => $e->getMessage(),
                                 ]);
                             }
+                        }
 
+                        // Tạo thông báo cho seller
+                        try {
+                            $product = $order->sanPham;
+                            if ($product && $product->khach_hang_id) {
+                                \App\Http\Controllers\NotificationController::notifyOrder(
+                                    $product->khach_hang_id,
+                                    $order->ma_don_hang,
+                                    'paid',
+                                    "/nguoi-ban/quan-ly-don-hang"
+                                );
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('VNPAY Callback - Failed to notify seller', [
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+
+                    // Set return data
+                    if ($isCartPayment) {
+                        $returnData['RspCode'] = '00';
+                        $returnData['Message'] = 'Thanh toán thành công cho ' . count($ordersToUpdate) . ' đơn hàng';
+                        $returnData['order_ids'] = array_map(function($o) { return $o->id; }, $ordersToUpdate);
+                        $returnData['order_codes'] = array_map(function($o) { return $o->ma_don_hang; }, $ordersToUpdate);
+                    } else {
+                        $firstOrder = $ordersToUpdate[0] ?? null;
+                        if ($firstOrder) {
                             $returnData['RspCode'] = '00';
                             $returnData['Message'] = 'Thanh toán thành công';
-                            $returnData['order_id'] = $order->id;
-                            $returnData['order_code'] = $order->ma_don_hang;
-                        } else {
-                            // Thanh toán thất bại
-                            $order->payment_status = 'failed';
-
-                            // Cập nhật payment_payload
-                            $existingPayload = json_decode($order->payment_payload, true) ?? [];
-                            $existingPayload['vnpay_callback'] = array_merge($paymentInfo, ['status' => 'failed']);
-                            $order->payment_payload = json_encode($existingPayload);
-                            $order->save();
-
-                            \Log::warning('VNPAY Callback - Payment Failed', [
-                                'order_id' => $order->id,
-                                'response_code' => $callbackData['response_code'],
-                                'transaction_status' => $callbackData['transaction_status'],
-                            ]);
-
-                            $returnData['RspCode'] = $callbackData['response_code'];
-                            $returnData['Message'] = 'Thanh toán thất bại. Mã lỗi: ' . $callbackData['response_code'];
-                            $returnData['order_id'] = $order->id;
-                            $returnData['order_code'] = $order->ma_don_hang;
+                            $returnData['order_id'] = $firstOrder->id;
+                            $returnData['order_code'] = $firstOrder->ma_don_hang;
                         }
-                    } else {
-                        \Log::warning('VNPAY Callback - Order Not Found', [
-                            'order_id' => $orderId,
-                            'txn_ref' => $callbackData['txn_ref'],
-                        ]);
-
-                        $returnData['RspCode'] = '99';
-                        $returnData['Message'] = 'Không tìm thấy đơn hàng';
                     }
                 } else {
-                    \Log::warning('VNPAY Callback - Invalid Order Format', [
+                    // Thanh toán thất bại - cập nhật tất cả các đơn hàng
+                    foreach ($ordersToUpdate as $order) {
+                        $order->payment_status = 'failed';
+
+                        // Cập nhật payment_payload
+                        $existingPayload = json_decode($order->payment_payload, true) ?? [];
+                        $existingPayload['vnpay_callback'] = array_merge($paymentInfo, ['status' => 'failed']);
+                        $order->payment_payload = json_encode($existingPayload);
+                        $order->save();
+
+                        \Log::warning('VNPAY Callback - Payment Failed', [
+                            'order_id' => $order->id,
+                            'response_code' => $callbackData['response_code'],
+                            'transaction_status' => $callbackData['transaction_status'],
+                        ]);
+                    }
+
+                    if ($isCartPayment) {
+                        $returnData['RspCode'] = $callbackData['response_code'];
+                        $returnData['Message'] = 'Thanh toán thất bại cho ' . count($ordersToUpdate) . ' đơn hàng. Mã lỗi: ' . $callbackData['response_code'];
+                    } else {
+                        $firstOrder = $ordersToUpdate[0] ?? null;
+                        if ($firstOrder) {
+                            $returnData['RspCode'] = $callbackData['response_code'];
+                            $returnData['Message'] = 'Thanh toán thất bại. Mã lỗi: ' . $callbackData['response_code'];
+                            $returnData['order_id'] = $firstOrder->id;
+                            $returnData['order_code'] = $firstOrder->ma_don_hang;
+                        }
+                    }
+                }
+
+                if (empty($ordersToUpdate)) {
+                    \Log::warning('VNPAY Callback - Orders Not Found', [
                         'txn_ref' => $callbackData['txn_ref'],
                     ]);
 
-                    $returnData['RspCode'] = '98';
-                    $returnData['Message'] = 'Mã đơn hàng không hợp lệ';
+                    $returnData['RspCode'] = '99';
+                    $returnData['Message'] = 'Không tìm thấy đơn hàng';
                 }
             } else {
                 \Log::error('VNPAY Callback - Invalid Hash', [
@@ -401,7 +522,7 @@ class ThanhToanController extends Controller
             // Đảm bảo URL không có trailing slash
             $frontendUrl = rtrim($frontendUrl, '/');
 
-            $redirectUrl = $frontendUrl . '/payment/callback?' . http_build_query($returnData);
+            $redirectUrl = $frontendUrl . '/thong-bao?' . http_build_query($returnData);
 
             \Log::info('VNPAY Callback - Redirecting', [
                 'frontend_url' => $frontendUrl,

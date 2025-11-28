@@ -91,7 +91,23 @@
         "có món nào hot không",
         "sản phẩm nổi bật",
         "sản phẩm mới nhất",
-        "sản phẩm bán chạy"
+        "sản phẩm bán chạy",
+        "tìm iphone",
+        "tìm samsung",
+        "tìm oppo",
+        "tìm xiaomi",
+        "tìm macbook",
+        "tìm dell",
+        "tìm asus",
+        "tìm hp",
+        "mua iphone",
+        "mua samsung",
+        "xem iphone",
+        "xem samsung",
+        "có iphone không",
+        "có samsung không",
+        "giá iphone",
+        "giá samsung"
       ],
       "responses": [
         "Chúng tôi có nhiều sản phẩm đồ cũ chất lượng: điện thoại, laptop, quần áo, giày dép, đồ gia dụng, sách vở, v.v. Bạn muốn tìm sản phẩm gì cụ thể?",
@@ -474,7 +490,6 @@
         "Nếu bạn đang bị vướng ở bước nào (đăng nhập, đặt hàng, thanh toán, v.v.), hãy nói rõ giúp mình nhé."
       ]
     },
-
     {
       "tag": "dang_nhap",
       "patterns": [
@@ -500,7 +515,6 @@
         "Bạn kiểm tra giúp mình xem đã gõ đúng email/số điện thoại và mật khẩu chưa, bật/tắt gõ tiếng Việt nữa nhé. Nếu vẫn lỗi, hãy thử đặt lại mật khẩu."
       ]
     },
-
     {
       "tag": "dang_ky",
       "patterns": [
@@ -523,7 +537,6 @@
         "Sau khi tạo tài khoản, bạn có thể dùng để mua hàng, theo dõi đơn và đăng bán sản phẩm dễ dàng."
       ]
     },
-
     {
       "tag": "khuyen_mai",
       "patterns": [
@@ -548,8 +561,6 @@
         "Nếu bạn có mã giảm giá/voucher, hãy nhập ở bước thanh toán để được áp dụng nhé."
       ]
     },
-
-  
     {
       "tag": "lien_he",
       "patterns": [
@@ -575,7 +586,6 @@
         "Bạn cũng có thể gửi phản hồi/góp ý trong mục 'Hỗ trợ/Feedback', chúng tôi sẽ phản hồi sớm nhất có thể."
       ]
     },
-
     {
       "tag": "bao_hanh",
       "patterns": [

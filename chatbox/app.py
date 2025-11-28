@@ -9,10 +9,10 @@ import requests
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
+# đổi api
 # Laravel API base URL
-LARAVEL_API_URL = "http://127.0.0.1:8000/api/client"
-FRONTEND_URL = "http://localhost:5173"
+LARAVEL_API_URL = "http://192.168.1.229:8000/api/client"
+FRONTEND_URL = "http://192.168.1.229:5173"
 
 # Load intents
 with open('intents.json', 'r', encoding='utf-8') as f:
@@ -130,6 +130,40 @@ def format_product_message(products, title="Sản phẩm", return_structured=Fal
     return message
 
 
+def extract_search_params(message):
+    """Extract keyword and sort order from user message"""
+    message = message.lower()
+    
+    # Default params
+    params = {
+        'keyword': None,
+        'sort': 'newest'
+    }
+    
+    # Detect sort order
+    if any(w in message for w in ['rẻ', 'thấp', 'giá tốt', 'giá rẻ']):
+        params['sort'] = 'price_asc'
+    elif any(w in message for w in ['cao', 'đắt', 'vip', 'xịn']):
+        params['sort'] = 'price_desc'
+    elif any(w in message for w in ['mới', 'new', 'vừa đăng']):
+        params['sort'] = 'newest'
+        
+    # Remove stop words to find keyword
+    stop_words = [
+        'tìm', 'kiếm', 'mua', 'bán', 'xem', 'cho', 'tôi', 'mình', 'shop', 'ơi', 'có', 'không', 
+        'sản phẩm', 'đồ', 'hàng', 'cái', 'chiếc', 'loại', 'các', 'những', 'là', 'với', 
+        'giá', 'rẻ', 'nhất', 'mới', 'cũ', 'thấp', 'cao', 'đắt', 'khoảng', 'tầm', 'dưới', 'trên'
+    ]
+    
+    words = message.split()
+    keywords = [w for w in words if w not in stop_words]
+    
+    if keywords:
+        params['keyword'] = ' '.join(keywords)
+        
+    return params
+
+
 @app.route("/chat", methods=["POST"])
 @app.route("/chatbot", methods=["POST"])
 def chat():
@@ -161,25 +195,40 @@ def chat():
                 
                 # Handle special product-related intents
                 products_data = None
-                if tag == "san_pham_moi":
-                    # Fetch newest products
-                    products = fetch_products(sort='newest', per_page=5)
-                    products_data = format_product_message(products, "Sản phẩm mới nhất", return_structured=True)
-                    response = products_data['text']
-                elif tag == "san_pham_theo_gia":
-                    # Fetch products sorted by price (ascending)
-                    products = fetch_products(sort='price_asc', per_page=5)
-                    products_data = format_product_message(products, "Sản phẩm giá rẻ nhất", return_structured=True)
-                    response = products_data['text']
-                elif tag == "san_pham_lien_quan":
-                    # Fetch recommended products (newest)
-                    products = fetch_products(sort='newest', per_page=5)
-                    products_data = format_product_message(products, "Sản phẩm đề xuất", return_structured=True)
-                    response = products_data['text']
-                elif response_template.startswith("PRODUCTS_"):
-                    # Fallback for other product intents
-                    products = fetch_products(sort='newest', per_page=5)
-                    products_data = format_product_message(products, "Sản phẩm", return_structured=True)
+                
+                # List of tags that trigger product search
+                product_search_tags = ["tim_san_pham", "san_pham_moi", "san_pham_theo_gia", "san_pham_lien_quan"]
+                
+                if tag in product_search_tags or response_template.startswith("PRODUCTS_"):
+                    # Extract params from user message
+                    search_params = extract_search_params(message)
+                    
+                    # Override sort if tag is specific
+                    if tag == "san_pham_moi":
+                        search_params['sort'] = 'newest'
+                    elif tag == "san_pham_theo_gia":
+                        # Keep extracted sort or default to price_asc if intent is price-related but no specific direction found
+                        if search_params['sort'] == 'newest': 
+                            search_params['sort'] = 'price_asc'
+                            
+                    # Fetch products
+                    products = fetch_products(
+                        sort=search_params['sort'], 
+                        per_page=5, 
+                        keyword=search_params['keyword']
+                    )
+                    
+                    # Determine title based on params
+                    title = "Sản phẩm"
+                    if search_params['keyword']:
+                        title += f" '{search_params['keyword']}'"
+                    
+                    if search_params['sort'] == 'price_asc':
+                        title += " (Giá rẻ nhất)"
+                    elif search_params['sort'] == 'newest':
+                        title += " (Mới nhất)"
+                        
+                    products_data = format_product_message(products, title, return_structured=True)
                     response = products_data['text']
                 else:
                     response = response_template

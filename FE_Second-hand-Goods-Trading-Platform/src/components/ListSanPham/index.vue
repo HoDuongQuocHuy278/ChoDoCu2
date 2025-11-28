@@ -1238,6 +1238,7 @@ function buyNow(product) {
 }
 
 .line-clamp-2 {
+  height: 35px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

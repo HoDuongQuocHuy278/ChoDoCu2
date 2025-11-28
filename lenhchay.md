@@ -45,6 +45,7 @@ python train.py
 ```bash
 cd BE_Second-hand-Goods-Trading-Platform
 php artisan serve
+php artisan serve --host=0.0.0.0 --port=8000           
 ```
 **URL**: http://127.0.0.1:8000
 
@@ -170,4 +171,19 @@ php artisan migrate:fresh --seed
 - 📖 [HUONG_DAN_CAI_DAT_VA_CHAY.md](./HUONG_DAN_CAI_DAT_VA_CHAY.md) - Hướng dẫn cài đặt từ đầu
 - 🌐 [HUONG_DAN_CHIA_SE_MANG.md](./HUONG_DAN_CHIA_SE_MANG.md) - Chia sẻ cho người cùng mạng
 - 🔗 [HUONG_DAN_CHIA_SE_1_LINK.md](./HUONG_DAN_CHIA_SE_1_LINK.md) - Chia sẻ qua 1 đường link duy nhất
+
+
+
+```bash
+lệnh chạy tổng thể
+
+cd FE_Second-hand-Goods-Trading-Platform
+npm run dev
+
+
+cd BE_Second-hand-Goods-Trading-Platform
+php artisan serve --host=0.0.0.0 --port=8000   
+
+cd chatbox
+python app.py
 

@@ -3,7 +3,10 @@
     <header class="d-flex flex-column flex-md-row align-items-md-center justify-content-md-between gap-2 mb-4">
       <div>
         <h2 class="fw-bold m-0">Giỏ hàng của bạn</h2>
-        <p class="text-muted mb-0">Quản lý các sản phẩm đã thêm trước khi tiến hành thanh toán.</p>
+        <p class="text-muted mb-1">Quản lý các sản phẩm đã thêm trước khi tiến hành thanh toán.</p>
+        <p v-if="items.length" class="text-muted small mb-0">
+          Đã chọn {{ selectedCount }} / {{ items.length }} sản phẩm
+        </p>
       </div>
       <div class="d-flex gap-2">
         <button class="btn btn-outline-secondary" type="button" @click="fetchCart" :disabled="isLoading || isMutating">
@@ -45,6 +48,14 @@
               <table class="table align-middle mb-0">
                 <thead class="table-light">
                   <tr>
+                    <th scope="col" class="text-center select-col">
+                      <input 
+                        class="form-check-input"
+                        type="checkbox"
+                        :checked="selectAll"
+                        @change="toggleSelectAll"
+                      >
+                    </th>
                     <th scope="col">Sản phẩm</th>
                     <th scope="col" class="text-center">Giá</th>
                     <th scope="col" class="text-center qty-col">Số lượng</th>
@@ -53,12 +64,20 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in items" :key="item.id">
+                  <tr v-for="item in items" :key="item.id" :class="{ 'table-active': item.selected }">
+                    <td class="text-center select-col">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        :checked="item.selected"
+                        @change="toggleItemSelection(item, $event)"
+                      >
+                    </td>
                     <td>
                       <div class="d-flex align-items-center gap-3">
-                        <img :src="item.image" class="thumb" alt="" @error="onImgError($event)">
+                        <img :src="item.image || fallbackImg" class="thumb" alt="" @error="onImgError($event, item)">
                         <div class="flex-grow-1">
-                          <h6 class="mb-1 text-truncate">{{ item.name }}</h6>
+                          <h6 class="mb-1 product-title">{{ item.name }}</h6>
                           <p class="text-muted small mb-0">{{ item.category || 'Danh mục khác' }}</p>
                         </div>
                       </div>
@@ -72,8 +91,14 @@
                       </div>
                     </td>
                     <td class="text-center fw-semibold">{{ formatCurrency(lineTotal(item)) }}</td>
-                    <td class="text-end">
-                      <button class="btn btn-link text-danger p-0" @click="removeItem(item)" :disabled="isMutating">Xóa</button>
+                    <td class="text-end action-cell">
+                      <router-link
+                        class="btn btn-outline-success btn-sm mb-2 w-100"
+                        :to="{ name: 'checkout', query: { product_id: item.id, quantity: item.quantity, from_cart: '1' } }"
+                      >
+                        Thanh toán
+                      </router-link>
+                      <button class="btn btn-link btn-outline-danger text-danger p-0" @click="removeItem(item)" :disabled="isMutating">Xóa</button>
                     </td>
                   </tr>
                 </tbody>
@@ -122,7 +147,7 @@
                 class="btn btn-success btn-lg" 
                 type="button"
                 @click="proceedCheckout"
-                :disabled="items.length === 0"
+                :disabled="!hasSelection || items.length === 0"
               >
                 Tiếp tục thanh toán
               </button>
@@ -139,10 +164,13 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/client'
 const CART_STORAGE_KEY = 'fe_marketplace_cart'
+const fallbackImg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiByeD0iMjQiIGZpbGw9IiNGRkZGRkYiIHN0cm9rZT0iI0VCRUVGMyIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik02MCA4MEg2NEw4MCAxMDZMMTAwIDc0TDEyMCAxMDRMMTQ0IDc0TDE2MCA5OUwxNjQgOTRMMTgwIDExMEgxODQiIHN0cm9rZT0iI0Q5REVERCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTQ0IDE0MEgxNTYiIHN0cm9rZT0iI0Q5REVERCIgc3Ryb2tlLXdpZHRoPSIyLjUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8dGV4dCB4PSI1MCIgeT0iMTYwIiBmaWxsPSIjOURBMEJFIiBmb250LXNpemU9IjE1IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiPkNoa+G6oW4gY8awIGnhu4duPC90ZXh0Pgo8L3N2Zz4='
+const router = useRouter()
 
 const items = ref([])
 const isLoading = ref(false)
@@ -164,6 +192,10 @@ const cartSummary = reactive({
   discount_amount: null,
   total: null
 })
+const selectAll = ref(true)
+const selectedItems = computed(() => items.value.filter((item) => item.selected))
+const hasSelection = computed(() => selectedItems.value.length > 0)
+const selectedCount = computed(() => selectedItems.value.length)
 
 onMounted(() => {
   fetchCart()
@@ -180,6 +212,7 @@ function fetchCart() {
     } else {
       items.value = []
     }
+    selectAll.value = items.value.length > 0
     resetVoucherState()
     updateSummary()
   } catch (err) {
@@ -194,7 +227,8 @@ function fetchCart() {
 }
 
 function updateSummary() {
-  cartSummary.subtotal = items.value.reduce((sum, item) => sum + lineTotal(item), 0)
+  const current = selectedItems.value
+  cartSummary.subtotal = current.reduce((sum, item) => sum + lineTotal(item), 0)
   cartSummary.shipping_fee = 0
   cartSummary.discount_amount = activeVoucher.discount
   cartSummary.total = cartSummary.subtotal + cartSummary.shipping_fee - cartSummary.discount_amount
@@ -202,7 +236,8 @@ function updateSummary() {
 
 function saveCart() {
   try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items.value))
+    const sanitized = items.value.map(({ selected, ...rest }) => rest)
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(sanitized))
     updateSummary()
     // Dispatch event to update cart count in header
     window.dispatchEvent(new CustomEvent('cart-updated'))
@@ -235,6 +270,7 @@ function normalizeItem(raw) {
     price: Number(raw.price) || 0,
     quantity: Math.max(1, Number(raw.quantity) || 1),
     category: raw.category || '',
+    image: raw.image || fallbackImg,
     line_total: null // Sẽ tính toán
   }
 }
@@ -245,7 +281,7 @@ function lineTotal(item) {
 
 const subTotal = computed(() => {
   if (Number.isFinite(cartSummary.subtotal)) return cartSummary.subtotal
-  return items.value.reduce((sum, item) => sum + lineTotal(item), 0)
+  return selectedItems.value.reduce((sum, item) => sum + lineTotal(item), 0)
 })
 
 const shippingFee = computed(() => {
@@ -289,6 +325,7 @@ function removeItem(item) {
     if (items.value.length === 0) {
       resetVoucherState()
     }
+    selectAll.value = items.value.length > 0 && items.value.every((itm) => itm.selected)
   }
 }
 
@@ -300,6 +337,7 @@ function clearCart() {
     resetVoucherState()
     resetSummary()
     errorMessage.value = ''
+    selectAll.value = false
   }
 }
 
@@ -348,19 +386,72 @@ function proceedCheckout() {
     voucherSuccess.value = false
     return
   }
-  // Chuyển đến trang checkout với giỏ hàng
-  // Có thể tạo route checkout với cart mode
-  alert('Chức năng thanh toán từ giỏ hàng đang được phát triển. Vui lòng thanh toán từng sản phẩm.')
+
+  const selected = selectedItems.value
+  if (!selected.length) {
+    voucherMessage.value = 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.'
+    voucherSuccess.value = false
+    return
+  }
+
+  if (selected.length === 1) {
+    router.push({
+      name: 'checkout',
+      query: {
+        product_id: selected[0].id,
+        quantity: selected[0].quantity,
+        from_cart: '1'
+      }
+    })
+    return
+  }
+
+  const payload = selected.map(({ id, name, price, quantity, image }) => ({
+    id,
+    name,
+    price,
+    quantity,
+    image
+  }))
+  localStorage.setItem('cart_selected_items', JSON.stringify(payload))
+  router.push({
+    name: 'checkout',
+    query: {
+      cart_mode: '1',
+      from_cart: '1'
+    }
+  })
 }
 
-function onImgError(event) {
+function onImgError(event, item) {
   // Tránh vòng lặp vô hạn
   if (event.target.dataset.fallbackSet === 'true') {
     event.target.style.display = 'none'
     return
   }
   event.target.dataset.fallbackSet = 'true'
+  event.target.src = fallbackImg
+  if (item) {
+    item.image = fallbackImg
+  }
   event.target.onerror = null
+}
+
+function toggleSelectAll(event) {
+  const checked = event?.target?.checked ?? selectAll.value
+  selectAll.value = checked
+  items.value.forEach((item) => {
+    item.selected = checked
+  })
+  updateSummary()
+}
+
+function toggleItemSelection(item, event) {
+  const checked = event?.target?.checked ?? !item.selected
+  item.selected = checked
+  const total = items.value.length
+  selectAll.value = total > 0 && items.value.every((itm) => itm.selected)
+  updateSummary()
 }
 </script>
 
@@ -374,6 +465,18 @@ function onImgError(event) {
   object-fit: cover;
   border-radius: 10px;
   border: 1px solid #eee;
+}
+.select-col {
+  width: 40px;
+}
+.select-col .form-check-input {
+  cursor: pointer;
+}
+.product-title {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .qty-control {
   display: inline-flex;
@@ -390,6 +493,14 @@ function onImgError(event) {
   background: transparent;
   text-align: center;
   font-weight: 600;
+}
+.action-cell .btn-outline-success {
+  font-weight: 600;
+  width: 115px;
+}
+.action-cell .btn-link {
+  display: block;
+  width: 115px;
 }
 .qty-control input:focus {
   outline: none;
