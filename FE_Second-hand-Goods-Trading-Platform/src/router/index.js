@@ -130,18 +130,57 @@ const routes = [
       template: `<div class="container py-5 text-center"><h1>404</h1><p>Không tìm thấy trang.</p></div>`,
     },
   },
+  {
+    path: "/admin",
+    component: () => import("../components/Admin/AdminLayout.vue"),
+    meta: { requiresAdmin: true, layout: 'blank' },
+    children: [
+      {
+        path: "dashboard",
+        name: "admin.dashboard",
+        component: () => import("../components/Admin/Dashboard/index.vue"),
+      },
+      {
+        path: "users",
+        name: "admin.users",
+        component: () => import("../components/Admin/Users/index.vue"),
+      },
+      {
+        path: "categories",
+        name: "admin.categories",
+        component: () => import("../components/Admin/Categories/index.vue"),
+      },
+      {
+        path: "products",
+        name: "admin.products",
+        component: () => import("../components/Admin/Products/index.vue"),
+      },
+      {
+        path: "orders",
+        name: "admin.orders",
+        component: () => import("../components/Admin/Orders/index.vue"),
+      },
+    ],
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
-    // Instant scroll, no delay
-    if (savedPosition) {
-      return savedPosition
+});
+
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("token") || localStorage.getItem("key_client");
+  const role = localStorage.getItem("user_role");
+
+  if (to.matched.some((record) => record.meta.requiresAdmin)) {
+    if (!token || role != 1) {
+      next({ name: "auth.login" });
     } else {
-      return { top: 0, behavior: 'instant' }
+      next();
     }
+  } else {
+    next();
   }
 });
 

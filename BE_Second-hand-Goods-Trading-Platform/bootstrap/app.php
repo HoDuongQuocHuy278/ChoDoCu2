@@ -12,6 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        ]);
+
         // Đăng ký middleware để không escape dấu / trong JSON response
         // Sử dụng web middleware để áp dụng cho tất cả requests
         $middleware->web(append: [

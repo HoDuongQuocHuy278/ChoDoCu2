@@ -20,7 +20,7 @@
               :class="{ active: img === activeImage }"
               @click="activeImage = img"
             >
-              <img :src="img" :alt="product.name" @error="onImgError($event)">
+              <img :src="fixImageUrl(img) || getDefaultProductImage()" :alt="product.name" @error="onImgError($event)">
             </button>
           </div>
         </div>
@@ -55,7 +55,19 @@
             <ul class="meta list-unstyled small">
               <li><strong>Mã sản phẩm:</strong> #{{ product.slug || product.id }}</li>
               <li><strong>Tình trạng:</strong> {{ product.conditionLabel || 'Đang cập nhật' }}</li>
-              <li><strong>Số lượng còn:</strong> {{ product.quantity || product.stock || 1 }}</li>
+              <li><strong>Số lượng còn:</strong> {{ product.so_luong || product.quantity || product.stock || 1 }}</li>
+              <li>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="product-stat">
+                    <i class="bx bx-show text-primary me-1"></i>
+                    <strong>{{ product.luot_xem || 0 }}</strong> lượt xem
+                  </div>
+                  <div class="product-stat">
+                    <i class="bx bx-cart text-success me-1"></i>
+                    <strong>{{ product.so_luot_mua || 0 }}</strong> lượt mua
+                  </div>
+                </div>
+              </li>
               <li class="d-flex align-items-center justify-content-between">
                 <span>
                   <strong>Đăng bởi:</strong> {{ product.seller?.name || product.khach_hang?.ho_va_ten || 'Người bán ẩn danh' }}
@@ -92,16 +104,6 @@
               <button class="btn btn-outline-primary flex-grow-1 flex-sm-grow-0" type="button" @click="buyNow">
                 Mua ngay
               </button>
-
-              <button 
-                v-if="product?.seller_id || product?.khach_hang_id || product?.seller?.id"
-                class="btn btn-success flex-grow-1 flex-sm-grow-0" 
-                type="button" 
-                @click="chatWithSeller"
-                title="Chat với người bán"
-              >
-                <i class="bx bx-message-rounded-dots me-1"></i> Chat với người bán
-              </button>
             </div>
 
             <div class="card bg-light border-0">
@@ -126,7 +128,7 @@
       <div class="row g-3">
         <article v-for="item in related" :key="item.id" class="col-6 col-md-4 col-lg-3">
           <div class="related-card card h-100">
-            <img :src="item.image || fallbackImg" class="card-img-top" :alt="item.name" @error="onImgError($event)">
+            <img :src="fixImageUrl(item.image) || getDefaultProductImage()" class="card-img-top" :alt="item.name" @error="onImgError($event)">
             <div class="card-body">
               <h6 class="text-truncate">{{ item.name }}</h6>
               <p class="mb-2 text-muted small">{{ formatCurrency(finalPrice(item)) }}</p>
@@ -148,6 +150,7 @@
 
 <script>
 import axios from 'axios'
+import { fixImageUrl } from '../../utils/imageHelper'
 
 export default {
   name: 'SanPham',
@@ -155,9 +158,11 @@ export default {
     return {
       API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/client',
       CART_STORAGE_KEY: 'fe_marketplace_cart',
+      fallbackImg: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgNjBDMTA3Ljk1NiA2MCAxMTQgNTMuOTU2IDExNCA0NkMxMTQgMzguMDQ0IDEwNy45NTYgMzIgMTAwIDMyQzkyLjA0NCAzMiA4NiAzOC4wNDQgODYgNDZDODYgNTMuOTU2IDkyLjA0NCA2MCAxMDAgNjBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xMDAgOTBDODQgOTAgNzAgOTggNjAgMTEwSDE0MEMxMzAgOTggMTE2IDkwIDEwMCA5MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+',
       product: null,
       related: [],
       images: [],
+      activeImage: null,
       isLoading: true,
       errorMessage: '',
       liked: false,
@@ -201,10 +206,13 @@ export default {
     buildImages(payload) {
       const gallery = []
       // Nhận image (single URL)
-      if (payload?.image) gallery.push(payload.image)
+      if (payload?.image) gallery.push(fixImageUrl(payload.image))
       // Nhận images (array)
       if (Array.isArray(payload?.images)) {
-        gallery.push(...payload.images.map(item => (typeof item === 'string' ? item : item.url)))
+        gallery.push(...payload.images.map(item => {
+            const url = typeof item === 'string' ? item : item.url
+            return fixImageUrl(url)
+        }))
       }
       // Fallback: nếu không có image/images, thử parse từ hinh_anh (có thể là JSON string hoặc URL string)
       if (!gallery.length && payload?.hinh_anh) {
@@ -214,14 +222,14 @@ export default {
             ? JSON.parse(payload.hinh_anh)
             : payload.hinh_anh
           if (Array.isArray(parsed)) {
-            gallery.push(...parsed.filter(item => typeof item === 'string' && item))
+            gallery.push(...parsed.filter(item => typeof item === 'string' && item).map(url => fixImageUrl(url)))
           } else if (typeof parsed === 'string' && parsed) {
-            gallery.push(parsed)
+            gallery.push(fixImageUrl(parsed))
           }
         } catch (e) {
           // Nếu parse lỗi, coi như là URL string đơn giản
           if (typeof payload.hinh_anh === 'string' && payload.hinh_anh) {
-            gallery.push(payload.hinh_anh)
+            gallery.push(fixImageUrl(payload.hinh_anh))
           }
         }
       }
@@ -291,7 +299,17 @@ export default {
       }
       event.target.dataset.fallbackSet = 'true'
       event.target.src = this.fallbackImg
+      event.target.src = this.fallbackImg
       event.target.onerror = null
+    },
+    fixImageUrl(url) {
+      return fixImageUrl(url)
+    },
+    fixImage(url) {
+        return fixImageUrl(url)
+    },
+    getDefaultProductImage() {
+      return this.fallbackImg
     },
     updateQty(delta) {
       const next = this.quantity + delta
@@ -311,7 +329,9 @@ export default {
           price: Number(this.finalPrice(this.product)),
           quantity: this.quantity,
           image: this.images[0],
-          category: this.product.category?.name || this.product.category || ''
+          category: this.product.category?.name || this.product.category || '',
+          seller_id: this.product.seller_id || this.product.user_id || this.product.nguoi_dang_id,
+          user_id: this.product.user_id || this.product.nguoi_dang_id || this.product.seller_id
         })
       }
       localStorage.setItem(this.CART_STORAGE_KEY, JSON.stringify(list))
@@ -446,6 +466,16 @@ export default {
 }
 .meta li.d-flex:last-child {
   border-bottom: none;
+}
+.product-stat {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+.product-stat strong {
+  color: #0f172a;
+  margin: 0 2px;
 }
 .description {
   line-height: 1.6;

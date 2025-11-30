@@ -155,11 +155,25 @@
                 <div class="card-body d-flex flex-column">
                   <h6 class="card-title product-name text-truncate" :title="product.name">{{ product.name }}</h6>
                   <p class="card-text small mb-2 line-clamp-2">{{ product.description }}</p>
-                  <div class="d-flex align-items-baseline gap-2 mb-3">
+                  <div class="d-flex align-items-baseline gap-2 mb-2">
                     <span class="price price-current" :class="index % 2 === 0 ? 'price-red' : 'price-orange'">{{
                       formatCurrency(finalPrice(product)) }}</span>
                     <span v-if="product.discount" class="price-old text-decoration-line-through small">{{
                       formatCurrency(product.price) }}</span>
+                  </div>
+                  <div class="product-meta-stats d-flex align-items-center gap-2 mb-3 small text-muted">
+                    <div class="stat-item" :title="`${product.luot_xem || 0} lượt xem`">
+                      <i class="bx bx-show"></i>
+                      <span>{{ product.luot_xem || 0 }}</span>
+                    </div>
+                    <div class="stat-item" :title="`${product.so_luot_mua || 0} đã bán`">
+                      <i class="bx bx-cart"></i>
+                      <span>{{ product.so_luot_mua || 0 }}</span>
+                    </div>
+                    <div class="stat-item" :title="`Còn ${product.so_luong || product.quantity || 1} sản phẩm`">
+                      <i class="bx bx-package"></i>
+                      <span>{{ product.so_luong || product.quantity || 1 }}</span>
+                    </div>
                   </div>
                   <div class="mt-auto d-flex flex-wrap gap-2 product-actions">
                     <router-link :to="`/san-pham/${product.id}`" class="btn btn-detail btn-sm flex-grow-1">

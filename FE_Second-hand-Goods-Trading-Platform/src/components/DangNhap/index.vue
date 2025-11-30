@@ -164,9 +164,16 @@ export default {
         const res = await axios.post(`${API_BASE_URL}/dang-nhap`, this.thong_tin_dang_nhap)
         if(res.data?.status){
           this.$toast?.success(res.data.message || 'Đăng nhập thành công')
-          localStorage.setItem('key_client', res.data.token)
+          localStorage.setItem('token', res.data.token) // Save as 'token' for AdminLayout
+          localStorage.setItem('key_client', res.data.token) // Keep for backward compatibility
+          localStorage.setItem('user_role', res.data.role)
           if(this.remember){ localStorage.setItem('remember_email', this.thong_tin_dang_nhap.email) }
-          this.$router.push('/')
+          
+          if (res.data.role == 1) {
+            this.$router.push('/admin/dashboard')
+          } else {
+            this.$router.push('/')
+          }
         } else {
           this.$toast?.error(res.data?.message || 'Đăng nhập thất bại')
         }

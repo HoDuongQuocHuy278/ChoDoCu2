@@ -195,151 +195,153 @@
   </div>
 </template>
 
-<script setup>
+<script>
 /* global bootstrap */
-import { onMounted, reactive, ref } from 'vue'
 import axios from 'axios'
 
-const LIST_API = 'http://127.0.0.1:8000/api/admin/orders'
-const UPDATE_STATUS_API = id => `http://127.0.0.1:8000/api/admin/orders/${id}/status`
-const UPDATE_PAYMENT_API = id => `http://127.0.0.1:8000/api/admin/orders/${id}/payment`
-const EXPORT_API = 'http://127.0.0.1:8000/api/admin/orders/export'
-const CANCEL_API = id => `http://127.0.0.1:8000/api/admin/orders/${id}/cancel`
-
-const filters = reactive({
-  keyword: '',
-  status: '',
-  payment_status: ''
-})
-
-const orders = ref([])
-const isLoading = ref(false)
-const errorMessage = ref('')
-const detailModalRef = ref(null)
-const detailInstance = ref(null)
-const selectedOrder = ref(null)
-
-onMounted(() => {
-  initModal()
-  fetchOrders()
-})
-
-function initModal() {
-  if (typeof bootstrap !== 'undefined' && detailModalRef.value) {
-    detailInstance.value = new bootstrap.Modal(detailModalRef.value)
-  }
-}
-
-async function fetchOrders() {
-  isLoading.value = true
-  errorMessage.value = ''
-  try {
-    const { data } = await axios.get(LIST_API, { params: { ...filters } })
-    orders.value = data?.data || data || []
-  } catch (err) {
-    console.error(err)
-    errorMessage.value = err?.response?.data?.message || 'Không thể tải danh sách đơn hàng.'
-    orders.value = []
-  } finally {
-    isLoading.value = false
-  }
-}
-
-function resetFilters() {
-  filters.keyword = ''
-  filters.status = ''
-  filters.payment_status = ''
-  fetchOrders()
-}
-
-async function updateStatus(order) {
-  try {
-    await axios.post(UPDATE_STATUS_API(order.id), { status: order.status })
-  } catch (err) {
-    alert(err?.response?.data?.message || err.message || 'Không thể cập nhật trạng thái.')
-  }
-}
-
-async function markPaid(order) {
-  try {
-    await axios.post(UPDATE_PAYMENT_API(order.id), { status: 'paid' })
-    order.payment_status = 'paid'
-  } catch (err) {
-    alert(err?.response?.data?.message || err.message || 'Không thể cập nhật thanh toán.')
-  }
-}
-
-async function cancelOrder(order) {
-  if (!confirm(`Xác nhận hủy đơn #${order.code || order.id}?`)) return
-  try {
-    await axios.post(CANCEL_API(order.id))
-    order.status = 'cancelled'
-  } catch (err) {
-    alert(err?.response?.data?.message || err.message || 'Không thể hủy đơn hàng.')
-  }
-}
-
-function openDetail(order) {
-  selectedOrder.value = order
-  if (!detailInstance.value) {
-    initModal()
-  }
-  detailInstance.value?.show()
-}
-
-function closeDetail() {
-  detailInstance.value?.hide()
-  selectedOrder.value = null
-}
-
-async function exportExcel() {
-  try {
-    const response = await axios.get(EXPORT_API, { params: { ...filters }, responseType: 'blob' })
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', 'orders.xlsx')
-    document.body.appendChild(link)
-    link.click()
-    link.parentNode.removeChild(link)
-  } catch (err) {
-    alert(err?.response?.data?.message || err.message || 'Không thể xuất file.')
-  }
-}
-
-function formatCurrency(value) {
-  return (Number(value) || 0).toLocaleString('vi-VN') + ' ₫'
-}
-
-function formatDate(value) {
-  if (!value) return '—'
-  try {
-    return new Date(value).toLocaleString('vi-VN')
-  } catch {
-    return value
-  }
-}
-
-function paymentBadge(status) {
-  switch (status) {
-    case 'paid':
-      return 'bg-success-subtle text-success'
-    case 'refunded':
-      return 'bg-warning-subtle text-warning'
-    default:
-      return 'bg-secondary-subtle text-secondary'
-  }
-}
-
-function paymentLabel(status) {
-  switch (status) {
-    case 'paid':
-      return 'Đã thanh toán'
-    case 'refunded':
-      return 'Hoàn tiền'
-    case 'unpaid':
-    default:
-      return 'Chưa thanh toán'
+export default {
+  data() {
+    return {
+      LIST_API: 'http://127.0.0.1:8000/api/admin/orders',
+      UPDATE_STATUS_API: (id) => `http://127.0.0.1:8000/api/admin/orders/${id}/status`,
+      UPDATE_PAYMENT_API: (id) => `http://127.0.0.1:8000/api/admin/orders/${id}/payment`,
+      EXPORT_API: 'http://127.0.0.1:8000/api/admin/orders/export',
+      CANCEL_API: (id) => `http://127.0.0.1:8000/api/admin/orders/${id}/cancel`,
+      filters: {
+        keyword: '',
+        status: '',
+        payment_status: ''
+      },
+      orders: [],
+      isLoading: false,
+      errorMessage: '',
+      detailInstance: null,
+      selectedOrder: null
+    }
+  },
+  mounted() {
+    this.initModal()
+    this.fetchOrders()
+  },
+  methods: {
+    initModal() {
+      if (typeof bootstrap !== 'undefined' && this.$refs.detailModalRef) {
+        this.detailInstance = new bootstrap.Modal(this.$refs.detailModalRef)
+      }
+    },
+    
+    async fetchOrders() {
+      this.isLoading = true
+      this.errorMessage = ''
+      try {
+        const { data } = await axios.get(this.LIST_API, { params: { ...this.filters } })
+        this.orders = data?.data || data || []
+      } catch (err) {
+        console.error(err)
+        this.errorMessage = err?.response?.data?.message || 'Không thể tải danh sách đơn hàng.'
+        this.orders = []
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    resetFilters() {
+      this.filters.keyword = ''
+      this.filters.status = ''
+      this.filters.payment_status = ''
+      this.fetchOrders()
+    },
+    
+    async updateStatus(order) {
+      try {
+        await axios.post(this.UPDATE_STATUS_API(order.id), { status: order.status })
+      } catch (err) {
+        alert(err?.response?.data?.message || err.message || 'Không thể cập nhật trạng thái.')
+      }
+    },
+    
+    async markPaid(order) {
+      try {
+        await axios.post(this.UPDATE_PAYMENT_API(order.id), { status: 'paid' })
+        order.payment_status = 'paid'
+      } catch (err) {
+        alert(err?.response?.data?.message || err.message || 'Không thể cập nhật thanh toán.')
+      }
+    },
+    
+    async cancelOrder(order) {
+      if (!confirm(`Xác nhận hủy đơn #${order.code || order.id}?`)) return
+      try {
+        await axios.post(this.CANCEL_API(order.id))
+        order.status = 'cancelled'
+      } catch (err) {
+        alert(err?.response?.data?.message || err.message || 'Không thể hủy đơn hàng.')
+      }
+    },
+    
+    openDetail(order) {
+      this.selectedOrder = order
+      if (!this.detailInstance) {
+        this.initModal()
+      }
+      this.detailInstance?.show()
+    },
+    
+    closeDetail() {
+      this.detailInstance?.hide()
+      this.selectedOrder = null
+    },
+    
+    async exportExcel() {
+      try {
+        const response = await axios.get(this.EXPORT_API, { params: { ...this.filters }, responseType: 'blob' })
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'orders.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.parentNode.removeChild(link)
+      } catch (err) {
+        alert(err?.response?.data?.message || err.message || 'Không thể xuất file.')
+      }
+    },
+    
+    formatCurrency(value) {
+      return (Number(value) || 0).toLocaleString('vi-VN') + ' ₫'
+    },
+    
+    formatDate(value) {
+      if (!value) return '—'
+      try {
+        return new Date(value).toLocaleString('vi-VN')
+      } catch {
+        return value
+      }
+    },
+    
+    paymentBadge(status) {
+      switch (status) {
+        case 'paid':
+          return 'bg-success-subtle text-success'
+        case 'refunded':
+          return 'bg-warning-subtle text-warning'
+        default:
+          return 'bg-secondary-subtle text-secondary'
+      }
+    },
+    
+    paymentLabel(status) {
+      switch (status) {
+        case 'paid':
+          return 'Đã thanh toán'
+        case 'refunded':
+          return 'Hoàn tiền'
+        case 'unpaid':
+        default:
+          return 'Chưa thanh toán'
+      }
+    }
   }
 }
 </script>
@@ -361,4 +363,3 @@ function paymentLabel(status) {
   font-size: 14px;
 }
 </style>
-

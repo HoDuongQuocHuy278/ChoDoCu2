@@ -119,6 +119,7 @@ class KhachHangController extends Controller
                     'status' => true,
                     'message' => 'Đăng nhập thành công',
                     'token' => $user->createToken('key_client')->plainTextToken,
+                    'role' => $user->role,
                 ]);
             }
         } else {
@@ -177,7 +178,7 @@ class KhachHangController extends Controller
         $view = "kichHoatTK";
         $noi_dung['ho_va_ten'] = $khachHang->ho_va_ten;
         // đổi api
-        $noi_dung['link'] = "http://192.168.1.229:5173//client/kich-hoat/" . $key;
+        $noi_dung['link'] = "http://192.168.1.111:5173//client/kich-hoat/" . $key;
         Mail::to($request->email)->send(new MasterMail($tieu_de, $view, $noi_dung));
 
         return response()->json([
@@ -533,6 +534,82 @@ class KhachHangController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Đổi mật khẩu thành công',
+        ]);
+    }
+    // ADMIN METHODS
+
+    public function adminStats()
+    {
+        $totalUsers = KhachHang::count();
+        $totalProducts = \App\Models\SanPham::count();
+        $totalOrders = \App\Models\DonHang::count();
+        $totalRevenue = \App\Models\DonHang::where('payment_status', 'paid')->sum('tong_tien');
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'total_users' => $totalUsers,
+                'total_products' => $totalProducts,
+                'total_orders' => $totalOrders,
+                'total_revenue' => $totalRevenue,
+            ]
+        ]);
+    }
+
+    public function adminIndex(Request $request)
+    {
+        $query = KhachHang::query();
+
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where(function($k) use ($q) {
+                $k->where('ho_va_ten', 'like', "%$q%")
+                  ->orWhere('email', 'like', "%$q%")
+                  ->orWhere('so_dien_thoai', 'like', "%$q%");
+            });
+        }
+
+        $users = $query->orderByDesc('id')->paginate(20);
+
+        return response()->json([
+            'status' => true,
+            'data' => $users
+        ]);
+    }
+
+    public function updateRole(Request $request, $id)
+    {
+        $user = KhachHang::findOrFail($id);
+        $user->role = $request->role; // 0 or 1
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cập nhật quyền thành công'
+        ]);
+    }
+
+    public function toggleBlock($id)
+    {
+        $user = KhachHang::findOrFail($id);
+        $user->is_block = !$user->is_block;
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => $user->is_block ? 'Đã khóa tài khoản' : 'Đã mở khóa tài khoản',
+            'data' => $user
+        ]);
+    }
+
+    public function adminDestroy($id)
+    {
+        $user = KhachHang::findOrFail($id);
+        $user->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Xóa người dùng thành công'
         ]);
     }
 }

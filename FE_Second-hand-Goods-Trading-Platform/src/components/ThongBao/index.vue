@@ -59,68 +59,69 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-
-const status = ref('info')
-const title = ref('')
-const message = ref('')
-const orderCode = ref('')
-const amount = ref(0)
-
-const statusClass = computed(() => {
-  return {
-    'bg-success-subtle text-success': status.value === 'success',
-    'bg-danger-subtle text-danger': status.value === 'failed',
-    'bg-warning-subtle text-warning': status.value === 'warning',
-    'bg-info-subtle text-info': status.value === 'info'
-  }
-})
-
-const textClass = computed(() => {
-  return {
-    'text-success': status.value === 'success',
-    'text-danger': status.value === 'failed',
-    'text-warning': status.value === 'warning',
-    'text-info': status.value === 'info'
-  }
-})
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
-}
-
-onMounted(() => {
-  // Get params from URL
-  const rspCode = route.query.RspCode
-  const msg = route.query.Message
-  const code = route.query.order_code || route.query.orderCode
-  const amt = route.query.amount || route.query.vnp_Amount // VNPay returns vnp_Amount in cents sometimes, but controller passes it
-  
-  orderCode.value = code || ''
-  amount.value = amt ? parseInt(amt) : 0
-
-  // Determine status based on RspCode (VNPay standard)
-  if (rspCode) {
-    if (rspCode === '00') {
-      status.value = 'success'
-      title.value = 'Thanh toán thành công!'
-      message.value = msg || 'Đơn hàng của bạn đã được thanh toán thành công.'
-    } else {
-      status.value = 'failed'
-      title.value = 'Thanh toán thất bại'
-      message.value = msg || `Lỗi thanh toán (Mã lỗi: ${rspCode})`
+<script>
+export default {
+  data() {
+    return {
+      status: 'info',
+      title: '',
+      message: '',
+      orderCode: '',
+      amount: 0
     }
-  } else {
-    // Generic usage
-    status.value = route.query.status || 'info'
-    title.value = route.query.title || 'Thông báo'
-    message.value = route.query.message || msg || ''
+  },
+  computed: {
+    statusClass() {
+      return {
+        'bg-success-subtle text-success': this.status === 'success',
+        'bg-danger-subtle text-danger': this.status === 'failed',
+        'bg-warning-subtle text-warning': this.status === 'warning',
+        'bg-info-subtle text-info': this.status === 'info'
+      }
+    },
+    textClass() {
+      return {
+        'text-success': this.status === 'success',
+        'text-danger': this.status === 'failed',
+        'text-warning': this.status === 'warning',
+        'text-info': this.status === 'info'
+      }
+    }
+  },
+  mounted() {
+    // Get params from URL
+    const rspCode = this.$route.query.RspCode
+    const msg = this.$route.query.Message
+    const code = this.$route.query.order_code || this.$route.query.orderCode
+    const amt = this.$route.query.amount || this.$route.query.vnp_Amount
+    
+    this.orderCode = code || ''
+    this.amount = amt ? parseInt(amt) : 0
+
+    // Determine status based on RspCode (VNPay standard)
+    if (rspCode) {
+      if (rspCode === '00') {
+        this.status = 'success'
+        this.title = 'Thanh toán thành công!'
+        this.message = msg || 'Đơn hàng của bạn đã được thanh toán thành công.'
+      } else {
+        this.status = 'failed'
+        this.title = 'Thanh toán thất bại'
+        this.message = msg || `Lỗi thanh toán (Mã lỗi: ${rspCode})`
+      }
+    } else {
+      // Generic usage
+      this.status = this.$route.query.status || 'info'
+      this.title = this.$route.query.title || 'Thông báo'
+      this.message = this.$route.query.message || msg || ''
+    }
+  },
+  methods: {
+    formatCurrency(value) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+    }
   }
-})
+}
 </script>
 
 <style scoped>

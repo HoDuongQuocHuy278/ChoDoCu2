@@ -28,6 +28,7 @@ Route::get('/user', function (Request $request) {
     Route::post('/khach-hang/tim-kiem', [KhachHangController::class, 'search']);
     Route::get('/khach-hang/xuat-excel', [KhachHangController::class, 'xuatExcel']);
 
+
     Route::post('/client/dang-nhap', [KhachHangController::class, 'dangNhap']);
     Route::post('/client/dang-ky', [KhachHangController::class, 'dangKy']);
     Route::get('/client/dang-xuat', [KhachHangController::class, 'dangXuat']);
@@ -39,7 +40,7 @@ Route::get('/user', function (Request $request) {
     Route::post('/client/doi-mat-khau', [KhachHangController::class, 'doiMatKhau']);
     Route::get('/client/check-seller-status', [KhachHangController::class, 'checkSellerStatus'])->middleware('auth:sanctum');
     Route::post('/client/dang-ky-ban', [KhachHangController::class, 'dangKyBan'])->middleware('auth:sanctum');
-    
+
     // Profile routes
     Route::prefix('client')->middleware(['auth:sanctum'])->group(function () {
         Route::get('/profile', [KhachHangController::class, 'getProfile']);
@@ -119,13 +120,31 @@ Route::get('/user', function (Request $request) {
         });
     });
 
-    // ADMIN (quản trị) – nên bảo vệ bằng auth:sanctum + policy
-    Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
-        Route::get('/san-pham', [SanPhamController::class, 'adminIndex']);
-        Route::post('/san-pham', [SanPhamController::class, 'store']);
-        Route::post('/san-pham/{san_pham}', [SanPhamController::class, 'update']); // hoặc put/patch
-        Route::delete('/san-pham/{san_pham}', [SanPhamController::class, 'destroy']);
-        Route::post('/san-pham/{san_pham}/toggle', [SanPhamController::class, 'toggleActive']);
+    // ADMIN (quản trị)
+    Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+        // Dashboard Stats
+        Route::get('/stats', [KhachHangController::class, 'adminStats']);
+
+        // Quản lý người dùng
+        Route::get('/users', [KhachHangController::class, 'adminIndex']);
+        Route::post('/users/{id}/role', [KhachHangController::class, 'updateRole']);
+        Route::post('/users/{id}/block', [KhachHangController::class, 'toggleBlock']);
+        Route::delete('/users/{id}', [KhachHangController::class, 'adminDestroy']);
+
+        // Quản lý danh mục
+        Route::get('/categories', [DanhMucController::class, 'index']); // Reuse existing
+        Route::post('/categories', [DanhMucController::class, 'store']);
+        Route::put('/categories/{danh_muc}', [DanhMucController::class, 'update']);
+        Route::delete('/categories/{danh_muc}', [DanhMucController::class, 'destroy']);
+
+        // Quản lý sản phẩm
+        Route::get('/products', [SanPhamController::class, 'adminIndex']);
+        Route::post('/products/{san_pham}/toggle', [SanPhamController::class, 'toggleActive']);
+        Route::delete('/products/{san_pham}', [SanPhamController::class, 'destroy']);
+
+        // Quản lý đơn hàng
+        Route::get('/orders', [DonHangController::class, 'adminIndex']);
+        Route::put('/orders/{don_hang}/status', [DonHangController::class, 'updateStatus']);
     });
 // Thanh toán
 Route::prefix('client')->group(function () {
@@ -134,9 +153,10 @@ Route::prefix('client')->group(function () {
     Route::get('/payment/vnpay/callback', [ThanhToanController::class, 'vnpayCallback']);
     Route::post('/payment/vnpay/refund', [ThanhToanController::class, 'vnpayRefund'])->middleware('auth:sanctum');
     Route::post('/payment/vnpay/query', [ThanhToanController::class, 'vnpayQuery'])->middleware('auth:sanctum');
-    
+
     // MBBank
     Route::post('/payment/mbbank', [ThanhToanController::class, 'mbbank_payment']);
+    Route::post('/payment/qr', [DonHangController::class, 'laythongtinnganhang']);
     // Test endpoint (có thể xóa sau khi debug xong)
     Route::get('/payment/mbbank/test', [ThanhToanController::class, 'testMbbankApi']);
 });

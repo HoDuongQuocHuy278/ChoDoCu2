@@ -96,7 +96,8 @@
           </div>
           <div class="modal-body qr-body">
             <div class="qr-wrapper">
-              <img src="../../assets/images/qr.jpg" alt="QR Code" class="qr-image" />
+              <!-- <img src="../../assets/images/qr.jpg" alt="QR Code" class="qr-image" /> -->
+              <div class="qr-placeholder" style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center;">QR Code</div>
             </div>
             <p class="qr-text">Quét mã QR bằng camera điện thoại để tải ứng dụng</p>
           </div>
@@ -131,7 +132,7 @@
           >
             <div class="cat-icon-wrapper">
               <div class="cat-icon" v-if="c.hinh_anh">
-                <img :src="c.hinh_anh" :alt="c.name || c.ten_danh_muc" />
+                <img :src="fixImage(c.hinh_anh)" :alt="c.name || c.ten_danh_muc" />
               </div>
               <div class="cat-icon emoji" v-else>
                 {{ c.icon || getCategoryIcon(c.slug) }}
@@ -214,7 +215,7 @@
                 <div v-for="product in m.products" :key="product.id" class="product-card">
                   <a :href="product.url" target="_blank" class="product-link">
                     <div class="product-img" v-if="product.image">
-                      <img :src="product.image" :alt="product.name" />
+                      <img :src="fixImage(product.image)" :alt="product.name" />
                     </div>
                     <div class="product-img placeholder" v-else>
                       <i class='bx bx-package'></i>
@@ -274,6 +275,7 @@
 
 <script>
 import axios from 'axios'
+import { fixImageUrl } from '../../utils/imageHelper'
 
 export default {
   name: 'TrangChu',
@@ -375,7 +377,7 @@ export default {
 
       try {
         //đổi api
-        const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || 'http://192.168.1.229:5000'
+        const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || 'http://192.168.1.111:5000'
         const res = await fetch(`${chatbotUrl}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -440,6 +442,9 @@ export default {
       if (e.key === 'Escape' && this.showChat) {
         this.toggleChat()
       }
+    },
+    fixImage(url) {
+      return fixImageUrl(url)
     }
   }
 }

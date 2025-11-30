@@ -42,7 +42,7 @@
               </p>
             </div>
 
-            <div v-if="orderResult.payment_method !== 'cash' && cartPaymentResults.length" class="cart-payment-followup mt-4">
+            <div v-if="cartPaymentResults.length" class="cart-payment-followup mt-4">
               <h6 class="fw-semibold mb-3">Hoàn tất thanh toán online</h6>
               <div 
                 v-for="result in cartPaymentResults" 
@@ -65,9 +65,14 @@
                   </p>
                 </div>
                 <div v-else class="d-flex flex-column flex-sm-row gap-3 align-items-center">
-                  <div v-if="result.paymentData?.qr_code" class="qr-block mb-0">
-                    <img :src="result.paymentData.qr_code" alt="QR MBBank">
-                  </div>
+                  <div v-if="result.paymentData?.qr_code" class="qr-block mb-3 text-center">
+                <img :src="result.paymentData.qr_code" alt="QR MBBank" class="img-fluid mb-2" style="max-width: 250px;">
+                <div v-if="result.paymentData.bank_info" class="bank-info-box p-2 bg-light rounded text-start d-inline-block">
+                    <p class="mb-1 small"><strong>Ngân hàng:</strong> {{ result.paymentData.bank_info.name }}</p>
+                    <p class="mb-1 small"><strong>STK:</strong> {{ result.paymentData.bank_info.number }}</p>
+                    <p class="mb-0 small"><strong>Chủ TK:</strong> {{ result.paymentData.bank_info.owner }}</p>
+                </div>
+              </div>
                   <div class="flex-grow-1 w-100">
                     <a 
                       :href="result.paymentUrl || result.paymentData?.payment_url" 
@@ -169,7 +174,7 @@
                 >
                   <div class="cart-item-left d-flex gap-3 flex-grow-1">
                     <div class="cart-item-thumb">
-                      <img :src="item.image || getDefaultProductImage()" :alt="item.name" @error="onImgError">
+                      <img :src="fixImageUrl(item.image) || getDefaultProductImage()" :alt="item.name" @error="onImgError">
                     </div>
                     <div class="cart-item-info flex-grow-1">
                       <div class="d-flex flex-wrap justify-content-between gap-2">
@@ -228,8 +233,8 @@
                         placeholder="Nguyễn Văn A"
                       >
                     </div>
-                    <div v-if="errors.buyer_name" class="invalid-feedback">
-                      {{ errors.buyer_name }}
+                    <div v-if="errors.buyer_name" class="text-danger small mt-1" style="display: block;">
+                      <i class='bx bx-error-circle'></i> {{ errors.buyer_name }}
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -244,8 +249,8 @@
                         placeholder="0901 234 567"
                       >
                     </div>
-                    <div v-if="errors.buyer_phone" class="invalid-feedback">
-                      {{ errors.buyer_phone }}
+                    <div v-if="errors.buyer_phone" class="text-danger small mt-1" style="display: block;">
+                      <i class='bx bx-error-circle'></i> {{ errors.buyer_phone }}
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -261,15 +266,19 @@
                     </div>
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Địa chỉ nhận hàng</label>
+                    <label class="form-label">Địa chỉ nhận hàng *</label>
                     <div class="input-icon">
                       <i class='bx bx-map'></i>
                       <input 
                         type="text" 
                         class="form-control" 
                         v-model.trim="form.shipping_address"
+                        :class="{ 'is-invalid': errors.shipping_address }"
                         placeholder="Số nhà, phường/xã, quận/huyện, tỉnh/thành phố"
                       >
+                    </div>
+                    <div v-if="errors.shipping_address" class="text-danger small mt-1" style="display: block;">
+                      <i class='bx bx-error-circle'></i> {{ errors.shipping_address }}
                     </div>
                   </div>
                   <div class="col-12">
@@ -388,8 +397,13 @@
                         <p class="text-muted small mb-0 mt-2 text-center">Link thanh toán cho tổng hóa đơn.</p>
                       </div>
                       <div v-else-if="form.payment_method === 'mbbank'">
-                        <div v-if="result.paymentData?.qr_code" class="qr-block mb-3">
-                          <img :src="result.paymentData.qr_code" alt="QR MBBank">
+                        <div v-if="result.paymentData?.qr_code" class="qr-block mb-3 text-center">
+                          <img :src="result.paymentData.qr_code" alt="QR MBBank" class="img-fluid mb-2" style="max-width: 250px;">
+                          <div v-if="result.paymentData.bank_info" class="bank-info-box p-2 bg-light rounded text-start d-inline-block">
+                              <p class="mb-1 small"><strong>Ngân hàng:</strong> {{ result.paymentData.bank_info.name }}</p>
+                              <p class="mb-1 small"><strong>STK:</strong> {{ result.paymentData.bank_info.number }}</p>
+                              <p class="mb-0 small"><strong>Chủ TK:</strong> {{ result.paymentData.bank_info.owner }}</p>
+                          </div>
                         </div>
                         <div class="d-flex flex-column flex-sm-row gap-2">
                           <a 
@@ -587,7 +601,7 @@
                           <div class="text-center">
                             <img 
                               :src="paymentData.qr_code || paymentData.qrCode" 
-                              alt="MBBank QR Code" 
+                              alt="MBBank QR Code"  
                               class="qr-code-img" 
                               style="max-width: 300px; border: 1px solid #ddd; padding: 10px; background: white; border-radius: 8px;"
                             >
@@ -728,7 +742,9 @@
                         required
                         :class="{ 'is-invalid': errors.buyer_name }"
                       >
-                      <div v-if="errors.buyer_name" class="invalid-feedback">{{ errors.buyer_name }}</div>
+                      <div v-if="errors.buyer_name" class="text-danger small mt-1" style="display: block;">
+                        <i class='bx bx-error-circle'></i> {{ errors.buyer_name }}
+                      </div>
                     </div>
                     <div class="col-md-6">
                       <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
@@ -739,7 +755,9 @@
                         placeholder="0123 456 789"
                         :class="{ 'is-invalid': errors.buyer_phone }"
                       >
-                      <div v-if="errors.buyer_phone" class="invalid-feedback">{{ errors.buyer_phone }}</div>
+                      <div v-if="errors.buyer_phone" class="text-danger small mt-1" style="display: block;">
+                        <i class='bx bx-error-circle'></i> {{ errors.buyer_phone }}
+                      </div>
                     </div>
                     <div class="col-md-6">
                       <label class="form-label">Email</label>
@@ -753,13 +771,17 @@
                       <div v-if="errors.buyer_email" class="invalid-feedback">{{ errors.buyer_email }}</div>
                     </div>
                     <div class="col-md-6">
-                      <label class="form-label">Địa chỉ nhận hàng</label>
+                      <label class="form-label">Địa chỉ nhận hàng <span class="text-danger">*</span></label>
                       <input 
                         v-model="form.shipping_address" 
                         type="text" 
                         class="form-control" 
                         placeholder="Số nhà, đường, quận/huyện, thành phố"
+                        :class="{ 'is-invalid': errors.shipping_address }"
                       >
+                      <div v-if="errors.shipping_address" class="text-danger small mt-1" style="display: block;">
+                        <i class='bx bx-error-circle'></i> {{ errors.shipping_address }}
+                      </div>
                     </div>
                     <div class="col-12">
                       <label class="form-label">Ghi chú cho người bán</label>
@@ -979,6 +1001,8 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import { banks } from '../../constants/banks'
+import { fixImageUrl } from '../../utils/imageHelper'
 
 const route = useRoute()
 const router = useRouter()
@@ -1026,7 +1050,8 @@ const form = reactive({
 const errors = reactive({
   buyer_name: '',
   buyer_email: '',
-  buyer_phone: ''
+  buyer_phone: '',
+  shipping_address: ''
 })
 
 const paymentOptions = [
@@ -1039,10 +1064,10 @@ const paymentOptions = [
   },
   { 
     value: 'mbbank', 
-    label: 'Ví MBBANK', 
-    desc: 'Thanh toán online qua QR hoặc thẻ liên kết',
-    icon: 'bx bx-mobile',
-    badge: 'Phổ biến'
+    label: 'VietQR', 
+    desc: 'Thanh toán qua mã QR (Mọi ngân hàng)',
+    icon: 'bx bx-qr-scan',
+    badge: 'Khuyên dùng'
   },
   { 
     value: 'cash', 
@@ -1068,9 +1093,9 @@ function getDefaultProductImage() {
 
 const productImage = computed(() => {
   if (!product.value) return getDefaultProductImage()
-  if (product.value.image) return product.value.image
+  if (product.value.image) return fixImageUrl(product.value.image)
   if (Array.isArray(product.value.images) && product.value.images.length) {
-    return product.value.images[0]
+    return fixImageUrl(product.value.images[0])
   }
   // Fallback: thử parse từ hinh_anh
   if (product.value.hinh_anh) {
@@ -1079,13 +1104,13 @@ const productImage = computed(() => {
         ? JSON.parse(product.value.hinh_anh)
         : product.value.hinh_anh
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed[0]
+        return fixImageUrl(parsed[0])
       } else if (typeof parsed === 'string' && parsed) {
-        return parsed
+        return fixImageUrl(parsed)
       }
     } catch (e) {
       if (typeof product.value.hinh_anh === 'string' && product.value.hinh_anh) {
-        return product.value.hinh_anh
+        return fixImageUrl(product.value.hinh_anh)
       }
     }
   }
@@ -1106,7 +1131,7 @@ const orderProductImage = computed(() => {
           images = [hinhAnh]
         }
       }
-      return images[0] || productImage.value
+      return fixImageUrl(images[0]) || productImage.value
     } catch (e) {
       // Nếu parse lỗi, dùng productImage
       return productImage.value
@@ -1171,6 +1196,7 @@ const loadProduct = async () => {
     const payload = response.data?.data || response.data
     
     if (payload && payload.id) {
+      console.log('Fetched Product Payload:', payload)
       product.value = payload
       
       // Auto-fill thông tin người mua từ localStorage nếu có
@@ -1202,6 +1228,7 @@ const validateStep1 = () => {
   errors.buyer_name = ''
   errors.buyer_phone = ''
   errors.buyer_email = ''
+  errors.shipping_address = ''
   
   if (!form.buyer_name.trim()) {
     errors.buyer_name = 'Vui lòng nhập họ tên'
@@ -1215,6 +1242,11 @@ const validateStep1 = () => {
   
   if (form.buyer_phone && !/^[0-9]{10,11}$/.test(form.buyer_phone.replace(/\s/g, ''))) {
     errors.buyer_phone = 'Số điện thoại không hợp lệ'
+    return false
+  }
+  
+  if (!form.shipping_address.trim()) {
+    errors.shipping_address = 'Vui lòng nhập địa chỉ nhận hàng'
     return false
   }
   
@@ -1251,152 +1283,6 @@ const changeQuantity = (delta) => {
 
 const clampQuantity = () => {
   form.quantity = Math.min(Math.max(form.quantity || 1, 1), 99)
-}
-
-const submitCartOrder = async () => {
-  if (!cartItems.value.length) {
-    errorMessage.value = 'Không có sản phẩm nào được chọn để thanh toán.'
-    return
-  }
-
-  if (!validateStep1()) {
-    return
-  }
-
-  submitting.value = true
-  errorMessage.value = ''
-  orderResult.value = null
-  cartPaymentResults.value = []
-
-  try {
-    const token = localStorage.getItem('key_client')
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-    const createdOrders = []
-    const selectedMethod = form.payment_method || 'cash'
-
-    // Bước 1: Tạo tất cả đơn hàng trước
-    for (const item of cartItems.value) {
-      const payload = {
-        product_id: item.id,
-        quantity: Math.max(1, Number(item.quantity) || 1),
-        payment_method: selectedMethod,
-        buyer_name: form.buyer_name,
-        buyer_email: form.buyer_email || null,
-        buyer_phone: form.buyer_phone || null,
-        shipping_address: form.shipping_address || null,
-        notes: form.notes || null,
-      }
-
-      const { data } = await axios.post(`${API_BASE_URL}/don-hang`, payload, { headers })
-      const orderRecord = data?.data || data
-      createdOrders.push(orderRecord)
-    }
-
-    // Bước 2: Tính tổng tiền
-    const totalAmount = createdOrders.reduce((sum, order) => sum + Number(order?.tong_tien || 0), 0)
-
-    // Bước 3: Nếu là thanh toán online, chỉ tạo 1 giao dịch thanh toán cho tổng hóa đơn
-    let paymentResult = null
-    if (selectedMethod === 'vnpay' || selectedMethod === 'mbbank') {
-      try {
-        const orderIds = createdOrders.map(order => order.id)
-        paymentResult = await requestCartPayment(orderIds, totalAmount, selectedMethod)
-      } catch (paymentErr) {
-        console.error('Không thể tạo thanh toán cho tổng hóa đơn', paymentErr)
-        throw paymentErr
-      }
-    }
-
-    orderResult.value = {
-      cart_mode: true,
-      orders: createdOrders,
-      total_amount: totalAmount,
-      payment_method: selectedMethod
-    }
-    if (paymentResult) {
-      cartPaymentResults.value = [{
-        orders: createdOrders,
-        paymentUrl: paymentResult.paymentUrl,
-        paymentData: paymentResult.paymentData
-      }]
-    }
-    cartStep.value = 3
-
-    // Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
-    try {
-      const storedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
-      const remaining = storedCart.filter((cartItem) => !cartItems.value.some((selected) => selected.id === cartItem.id))
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(remaining))
-      localStorage.removeItem(CART_SELECTION_KEY)
-      window.dispatchEvent(new CustomEvent('cart-updated'))
-    } catch (err) {
-      console.warn('Không thể cập nhật giỏ hàng sau khi thanh toán', err)
-    }
-
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  } catch (err) {
-    console.error(err)
-    errorMessage.value = err?.response?.data?.message || 'Không thể tạo đơn hàng cho các sản phẩm đã chọn.'
-  } finally {
-    submitting.value = false
-  }
-}
-
-const submitOrder = async () => {
-  if (cartMode.value) {
-    await submitCartOrder()
-    return
-  }
-
-  if (!validateStep1()) {
-    currentStep.value = 1
-    return
-  }
-  
-  if (!product.value) {
-    errorMessage.value = 'Không tìm thấy sản phẩm.'
-    return
-  }
-
-  submitting.value = true
-  errorMessage.value = ''
-  paymentUrl.value = null
-  paymentData.value = null
-  
-  try {
-    const payload = {
-      product_id: product.value.id,
-      quantity: form.quantity,
-      payment_method: form.payment_method,
-      buyer_name: form.buyer_name,
-      buyer_email: form.buyer_email || null,
-      buyer_phone: form.buyer_phone || null,
-      shipping_address: form.shipping_address || null,
-      notes: form.notes || null,
-    }
-
-    // Gửi token nếu có (để lưu khach_hang_id)
-    const token = localStorage.getItem('key_client')
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-    
-    const { data } = await axios.post(`${API_BASE_URL}/don-hang`, payload, { headers })
-    orderResult.value = data?.data || data
-    
-    // Nếu là thanh toán online (vnpay hoặc mbbank), tạo payment
-    if (form.payment_method === 'vnpay' || form.payment_method === 'mbbank') {
-      await createPayment(orderResult.value.id, form.payment_method)
-    }
-    
-    // Scroll to top to show success message
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  } catch (err) {
-    console.error(err)
-    errorMessage.value = err?.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.'
-    // Show error and go back to step 1
-    currentStep.value = 1
-  } finally {
-    submitting.value = false
-  }
 }
 
 const requestPayment = async (orderData, paymentMethod) => {
@@ -1493,16 +1379,164 @@ const requestCartPayment = async (orderIds, totalAmount, paymentMethod) => {
   return result
 }
 
-const createPayment = async (orderId, paymentMethod) => {
+const generateVietQR = (bankName, accountNumber, accountName, amount, content) => {
+  if (!bankName || !accountNumber) return null
+  
+  // Tìm Bin code từ tên ngân hàng (shortName)
+  const bank = banks.find(b => b.shortName === bankName || b.name === bankName)
+  
+  // If bank not found, use bank name directly (fallback)
+  const bankId = bank?.bin || bank?.code || bankName
+  
+  const cleanAccount = accountNumber.replace(/[^a-zA-Z0-9]/g, '')
+  const cleanName = encodeURIComponent(accountName || '')
+  const cleanContent = encodeURIComponent(content || '')
+  
+  return `https://img.vietqr.io/image/${bankId}-${cleanAccount}-compact2.jpg?amount=${amount}&addInfo=${cleanContent}&accountName=${cleanName}`
+}
+
+
+
+const fetchSellerBankInfo = async (sellerId) => {
+  try {
+    // Try public endpoint first
+    console.log(`Fetching bank info for seller ${sellerId} from /public/users`)
+    let response = await axios.get(`${API_BASE_URL}/public/users/${sellerId}`)
+    console.log('Public User Response:', response.data)
+    let data = response.data?.data || response.data
+
+    // If public endpoint fails or returns no data, try authenticated /users endpoint (if token exists)
+    if (!data || (!data.ten_ngan_hang && !data.bank_name && !data.ngan_hang)) {
+         const token = localStorage.getItem('key_client')
+         if (token) {
+             console.log(`Retrying fetch for seller ${sellerId} from /users (auth)`)
+             try {
+                response = await axios.get(`${API_BASE_URL}/users/${sellerId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                console.log('Auth User Response:', response.data)
+                const authData = response.data?.data || response.data
+                // Merge auth data if it has more info
+                if (authData) {
+                    data = { ...data, ...authData }
+                }
+             } catch (e2) {
+                 console.warn('Auth fetch failed', e2)
+             }
+         }
+    }
+    
+    // Helper to normalize bank name if it's a BIN
+    if (data) {
+        const bankName = data.ten_ngan_hang || data.bank_name || data.ngan_hang
+        if (bankName && /^\d+$/.test(bankName)) {
+             // It's a BIN, look it up
+             const bank = banks.find(b => b.bin === bankName)
+             if (bank) {
+                 data.ten_ngan_hang = bank.shortName // Use shortName for display/QR
+             }
+        }
+    }
+
+    
+    return data
+  } catch (e) {
+    console.warn('Không thể lấy thông tin ngân hàng người bán', e)
+    return null
+  }
+}
+
+const createPaymentNew = async (orderId, paymentMethod) => {
   if (!orderId || !orderResult.value) return
 
   processingPayment.value = true
 
   try {
-    const result = await requestPayment(orderResult.value, paymentMethod)
+    let result = null
+    
+    // Nếu là VNPAY, gọi API tạo thanh toán
     if (paymentMethod === 'vnpay') {
-      paymentUrl.value = result.paymentUrl
-    } else if (paymentMethod === 'mbbank') {
+        try {
+            result = await requestPayment(orderResult.value, paymentMethod)
+            paymentUrl.value = result.paymentUrl
+        } catch (e) {
+            console.error('Lỗi tạo thanh toán VNPAY', e)
+            throw e
+        }
+    } 
+    // Nếu là MBBank (VietQR), tạo QR code trực tiếp tại frontend (bỏ qua API backend theo yêu cầu)
+    else if (paymentMethod === 'mbbank') {
+        // Mock result để flow phía dưới hoạt động
+        result = { 
+            paymentData: { 
+                transaction_id: `QR_${orderResult.value.ma_don_hang}`,
+                qr_code: null // Sẽ được fill ở dưới
+            } 
+        }
+        
+       // Lấy thông tin người bán từ API
+        let sellerBank = null
+        
+        try {
+             const token = localStorage.getItem('key_client')
+             const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+             const { data } = await axios.post(`${API_BASE_URL}/payment/qr`, { order_id: orderId }, { headers })
+             
+             console.log('Bank info API response:', data)
+             
+             if (data && data.status && data.data) {
+                 const s = data.data
+                 if (s.ten_ngan_hang && s.so_tai_khoan) {
+                     sellerBank = {
+                         name: s.ten_ngan_hang,
+                         number: s.so_tai_khoan,
+                         owner: s.chu_tai_khoan
+                     }
+                 }
+             }
+        } catch (err) {
+            console.error('Failed to fetch bank info from backend', err)
+            console.error('Error response:', err.response?.data)
+        }
+
+        // Fallback to default bank if no seller info (FIX for testing)
+        if (!sellerBank) {
+            console.warn("No seller bank info found.")
+            console.warn("Order ID:", orderId)
+            const errorMsg = 'Người bán chưa cập nhật thông tin ngân hàng. Vui lòng liên hệ người bán.'
+            if (window?.$toast) {
+                window.$toast.error(errorMsg)
+            } else {
+                alert(errorMsg)
+            }
+            return
+        }
+
+        // Nếu có thông tin ngân hàng, tạo VietQR
+        if (sellerBank && sellerBank.name && sellerBank.number) {
+            const qrUrl = generateVietQR(
+                sellerBank.name,
+                sellerBank.number,
+                sellerBank.owner,
+                orderResult.value.tong_tien,
+                `Thanh toan don hang ${orderResult.value.ma_don_hang}`
+            )
+            
+            // Override QR code từ backend
+            if (result.paymentData) {
+                result.paymentData.qr_code = qrUrl
+                // Xóa payment_url để ưu tiên hiện QR
+                result.paymentData.payment_url = null 
+                result.paymentData.bank_info = sellerBank
+            } else {
+                result.paymentData = {
+                    qr_code: qrUrl,
+                    transaction_id: result.paymentData?.transaction_id || result.paymentData?.id,
+                    bank_info: sellerBank
+                }
+            }
+        }
+
       paymentData.value = result.paymentData
       if (result.paymentUrl) {
         paymentUrl.value = result.paymentUrl
@@ -1521,12 +1555,234 @@ const createPayment = async (orderId, paymentMethod) => {
   }
 }
 
+const submitCartOrder = async () => {
+  if (!cartItems.value.length) {
+    errorMessage.value = 'Không có sản phẩm nào được chọn để thanh toán.'
+    return
+  }
+
+  if (!validateStep1()) {
+    return
+  }
+
+  submitting.value = true
+  errorMessage.value = ''
+  orderResult.value = null
+  cartPaymentResults.value = []
+
+  try {
+    const token = localStorage.getItem('key_client')
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+    const createdOrders = []
+    const selectedMethod = form.payment_method || 'cash'
+
+    // Bước 1: Tạo tất cả đơn hàng trước
+    for (const item of cartItems.value) {
+      const payload = {
+        product_id: item.id,
+        quantity: Math.max(1, Number(item.quantity) || 1),
+        // Backend doesn't support 'mbbank', so we send 'cash' to create the order
+        // and handle the QR code display locally on the frontend
+        payment_method: selectedMethod === 'mbbank' ? 'cash' : selectedMethod,
+        buyer_name: form.buyer_name,
+        buyer_email: form.buyer_email || null,
+        buyer_phone: form.buyer_phone || null,
+        shipping_address: form.shipping_address || null,
+        notes: form.notes || null,
+      }
+
+      const { data } = await axios.post(`${API_BASE_URL}/don-hang`, payload, { headers })
+      const orderRecord = data?.data || data
+      createdOrders.push(orderRecord)
+    }
+
+    // Bước 2: Tính tổng tiền
+    const totalAmount = createdOrders.reduce((sum, order) => sum + Number(order?.tong_tien || 0), 0)
+
+    // Bước 3: Nếu là thanh toán online
+    let paymentResult = null
+    
+    if (selectedMethod === 'vnpay') {
+      try {
+        const orderIds = createdOrders.map(order => order.id)
+        paymentResult = await requestCartPayment(orderIds, totalAmount, selectedMethod)
+      } catch (paymentErr) {
+        console.error('Không thể tạo thanh toán cho tổng hóa đơn', paymentErr)
+        throw paymentErr
+      }
+    } else if (selectedMethod === 'mbbank') {
+        // Với MBBank/VietQR, không gọi API backend mà tạo QR trực tiếp
+        paymentResult = { 
+            paymentData: { 
+                transaction_id: `QR_CART_${Date.now()}` 
+            } 
+        }
+    }
+
+      // Inject VietQR if MBBank
+      if (selectedMethod === 'mbbank' && paymentResult) {
+          // Try to get seller info from the first item in cart
+          let sellerBank = null
+          const firstItem = cartItems.value[0]
+          
+          if (createdOrders.length > 0) {
+              try {
+                  const token = localStorage.getItem('key_client')
+                  const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+                  // Use the first order to get the seller's bank info
+                  // Note: This assumes all items in cart are from same seller or we only show QR for one.
+                  // If multiple sellers, this logic might need refinement, but for now we follow the existing pattern.
+                  // Actually, the backend logic for `laythongtinnganhang` uses `donHang->san_pham_id` -> `khach_hang_id` (seller).
+                  // So we just need one valid order ID from the batch.
+                  const orderId = createdOrders[0].id
+                  
+                  const { data } = await axios.post(`${API_BASE_URL}/payment/qr`, { order_id: orderId }, { headers })
+                  
+                  if (data && data.status && data.data) {
+                      const s = data.data
+                      if (s.ten_ngan_hang && s.so_tai_khoan) {
+                          sellerBank = {
+                              name: s.ten_ngan_hang,
+                              number: s.so_tai_khoan,
+                              owner: s.chu_tai_khoan
+                          }
+                      }
+                  }
+              } catch (err) {
+                  console.error('Failed to fetch bank info for cart order', err)
+              }
+          }
+
+          // Fallback to a default bank if no seller info found (for testing)
+          if (!sellerBank) {
+              console.warn("No seller bank info found for cart.")
+              if (window?.$toast) {
+                  window.$toast.error('Người bán chưa cập nhật thông tin ngân hàng. Vui lòng liên hệ người bán.')
+              } else {
+                  alert('Người bán chưa cập nhật thông tin ngân hàng. Vui lòng liên hệ người bán.')
+              }
+              // Do not generate QR if no info
+              return
+          }
+
+          if (sellerBank && sellerBank.name && sellerBank.number) {
+              const qrUrl = generateVietQR(
+                  sellerBank.name,
+                  sellerBank.number,
+                  sellerBank.owner,
+                  totalAmount,
+                  `Thanh toan ${createdOrders.length} don hang`
+              )
+              
+              if (!paymentResult.paymentData) paymentResult.paymentData = {}
+              paymentResult.paymentData.qr_code = qrUrl
+              paymentResult.paymentData.payment_url = null
+              // Attach info for display
+              paymentResult.paymentData.bank_info = sellerBank
+          }
+      }
+
+
+    orderResult.value = {
+      cart_mode: true,
+      orders: createdOrders,
+      total_amount: totalAmount,
+      payment_method: selectedMethod
+    }
+    if (paymentResult) {
+      cartPaymentResults.value = [{
+        orders: createdOrders,
+        paymentUrl: paymentResult.paymentUrl,
+        paymentData: paymentResult.paymentData
+      }]
+    }
+    cartStep.value = 3
+
+    // Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
+    try {
+      const storedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]')
+      const remaining = storedCart.filter((cartItem) => !cartItems.value.some((selected) => selected.id === cartItem.id))
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(remaining))
+      localStorage.removeItem(CART_SELECTION_KEY)
+      window.dispatchEvent(new CustomEvent('cart-updated'))
+    } catch (err) {
+      console.warn('Không thể cập nhật giỏ hàng sau khi thanh toán', err)
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch (err) {
+    console.error(err)
+    errorMessage.value = err?.response?.data?.message || 'Không thể tạo đơn hàng cho các sản phẩm đã chọn.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+const submitOrder = async () => {
+  if (cartMode.value) {
+    await submitCartOrder()
+    return
+  }
+
+  if (!validateStep1()) {
+    currentStep.value = 1
+    return
+  }
+  
+  if (!product.value) {
+    errorMessage.value = 'Không tìm thấy sản phẩm.'
+    return
+  }
+
+  submitting.value = true
+  errorMessage.value = ''
+  paymentUrl.value = null
+  paymentData.value = null
+  
+  try {
+    const payload = {
+      product_id: product.value.id,
+      quantity: form.quantity,
+      payment_method: form.payment_method,
+      buyer_name: form.buyer_name,
+      buyer_email: form.buyer_email || null,
+      buyer_phone: form.buyer_phone || null,
+      shipping_address: form.shipping_address || null,
+      notes: form.notes || null,
+    }
+
+    // Gửi token nếu có (để lưu khach_hang_id)
+    const token = localStorage.getItem('key_client')
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
+    
+    const { data } = await axios.post(`${API_BASE_URL}/don-hang`, payload, { headers })
+    orderResult.value = data?.data || data
+    
+    // Nếu là thanh toán online (vnpay hoặc mbbank), tạo payment
+    if (form.payment_method === 'vnpay' || form.payment_method === 'mbbank') {
+      await createPaymentNew(orderResult.value.id, form.payment_method)
+    }
+    
+    // Scroll to top to show success message
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch (err) {
+    console.error(err)
+    errorMessage.value = err?.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.'
+    // Show error and go back to step 1
+    currentStep.value = 1
+  } finally {
+    submitting.value = false
+  }
+}
+
+
+
 const paymentInstruction = (method) => {
   switch (method) {
     case 'vnpay':
       return 'Sau khi xác nhận, hệ thống sẽ gửi mã QR/Link VNPAY để bạn hoàn tất thanh toán.'
     case 'mbbank':
-      return 'Bạn sẽ nhận được hướng dẫn thanh toán qua ví MBBank. Vui lòng hoàn tất trong 15 phút.'
+      return 'Quét mã VietQR để chuyển khoản trực tiếp cho người bán. Nội dung chuyển khoản sẽ được điền tự động.'
     default:
       return 'Thanh toán trực tiếp cho người giao hàng hoặc người bán khi nhận sản phẩm.'
   }

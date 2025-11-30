@@ -99,7 +99,7 @@ php artisan serve --host=0.0.0.0 --port=8000
 **Nguyên nhân:** VNPAY không thể truy cập Return URL từ internet  
 **Giải pháp:** 
 - Nếu test local, dùng ngrok: `ngrok http 8000`
-- Hoặc dùng IP mạng nội bộ (như `192.168.1.61:8000`)
+- Hoặc dùng IP mạng nội bộ (như `.:8000`)
 - Đảm bảo firewall cho phép kết nối từ internet
 
 ### Lỗi: Hash không hợp lệ

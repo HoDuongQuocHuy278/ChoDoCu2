@@ -104,87 +104,82 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
-import axios from "axios";
+<script>
+import axios from "axios"
 
-const apiUrl = "http://localhost:8000/api/san-pham"; // đổi URL cho phù hợp
-
-const sanPhams = ref([]);
-const search = ref("");
-const isEdit = ref(false);
-
-const form = ref({
-  id: null,
-  ten_san_pham: "",
-  gia: "",
-  so_luong: "",
-  mo_ta: "",
-  is_active: 1,
-});
-
-//  Lấy danh sách sản phẩm
-const getSanPhams = async () => {
-  const res = await axios.get(`${apiUrl}/get-data`);
-  sanPhams.value = res.data.data;
-};
-
-// Thêm sản phẩm
-const addSanPham = async () => {
-  if (!form.value.ten_san_pham) return alert("Nhập tên sản phẩm!");
-  const res = await axios.post(`${apiUrl}/add`, form.value);
-  alert(res.data.message);
-  getSanPhams();
-  resetForm();
-};
-
-// Cập nhật sản phẩm
-const updateSanPham = async () => {
-  const res = await axios.post(`${apiUrl}/update`, form.value);
-  alert(res.data.message);
-  getSanPhams();
-  resetForm();
-};
-
-//  Xóa sản phẩm
-const deleteSanPham = async (id) => {
-  if (confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
-    const res = await axios.post(`${apiUrl}/delete`, { id });
-    alert(res.data.message);
-    getSanPhams();
+export default {
+  data() {
+    return {
+      apiUrl: "http://localhost:8000/api/san-pham",
+      sanPhams: [],
+      search: "",
+      isEdit: false,
+      form: {
+        id: null,
+        ten_san_pham: "",
+        gia: "",
+        so_luong: "",
+        mo_ta: "",
+        is_active: 1,
+      }
+    }
+  },
+  mounted() {
+    this.getSanPhams()
+  },
+  methods: {
+    async getSanPhams() {
+      const res = await axios.get(`${this.apiUrl}/get-data`)
+      this.sanPhams = res.data.data
+    },
+    
+    async addSanPham() {
+      if (!this.form.ten_san_pham) return alert("Nhập tên sản phẩm!")
+      const res = await axios.post(`${this.apiUrl}/add`, this.form)
+      alert(res.data.message)
+      this.getSanPhams()
+      this.resetForm()
+    },
+    
+    async updateSanPham() {
+      const res = await axios.post(`${this.apiUrl}/update`, this.form)
+      alert(res.data.message)
+      this.getSanPhams()
+      this.resetForm()
+    },
+    
+    async deleteSanPham(id) {
+      if (confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
+        const res = await axios.post(`${this.apiUrl}/delete`, { id })
+        alert(res.data.message)
+        this.getSanPhams()
+      }
+    },
+    
+    async searchSanPham() {
+      if (!this.search) return this.getSanPhams()
+      const res = await axios.post(`${this.apiUrl}/search`, { noi_dung: this.search })
+      this.sanPhams = res.data.data
+    },
+    
+    editSanPham(sp) {
+      this.form = { ...sp }
+      this.isEdit = true
+    },
+    
+    resetForm() {
+      this.form = {
+        id: null,
+        ten_san_pham: "",
+        gia: "",
+        so_luong: "",
+        mo_ta: "",
+        is_active: 1,
+      }
+      this.isEdit = false
+    }
   }
-};
-
-// Tìm kiếm sản phẩm
-const searchSanPham = async () => {
-  if (!search.value) return getSanPhams();
-  const res = await axios.post(`${apiUrl}/search`, { noi_dung: search.value });
-  sanPhams.value = res.data.data;
-};
-
-//  Chọn sản phẩm để sửa
-const editSanPham = (sp) => {
-  form.value = { ...sp };
-  isEdit.value = true;
-};
-
-//  Reset form
-const resetForm = () => {
-  form.value = {
-    id: null,
-    ten_san_pham: "",
-    gia: "",
-    so_luong: "",
-    mo_ta: "",
-    is_active: 1,
-  };
-  isEdit.value = false;
-};
-
-// Khi tải trang
-onMounted(() => {
-  getSanPhams();
-});
+}
 </script>
 
 <style scoped>

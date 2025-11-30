@@ -109,7 +109,12 @@
                         <div class="card-box">
                             <div class="form-group">
                                 <label>Tên Ngân Hàng</label>
-                                <input type="text" v-model="bank.name" placeholder="Ví dụ: Vietcombank" />
+                                <select v-model="bank.name">
+                                    <option value="" disabled>Chọn ngân hàng</option>
+                                    <option v-for="b in banks" :key="b.bin" :value="b.shortName">
+                                        {{ b.shortName }} - {{ b.name }}
+                                    </option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Số Tài Khoản</label>
@@ -300,6 +305,7 @@
 
 <script>
 import axios from 'axios'
+import { banks } from '../../constants/banks'
 
 export default {
     name: "UserProfileShopeeStyle",
@@ -318,6 +324,7 @@ export default {
             isLoadingOrders: false,
             selectedOrder: null,
             fallbackImg: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTYwQzM0NS4yMjkgMTYwIDM4MiAxMjMuMjI5IDM4MiA3OEMzODIgMzIuNzcwOSAzNDUuMjI5IDYgMzAwIDZDMjU0Ljc3MCA2IDIxOCAzMi43NzA5IDIxOCA3OEMyMTggMTIzLjIyOSAyNTQuNzcwIDE2MCAzMDAgMTYwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzAwIDI0MEMyNTAgMjQwIDIxMCAyNTYgMTg1IDI4MEg0MTVDMzkwIDI1NiAzNTAgMjQwIDMwMCAyNDBaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjMwMCIgeT0iMzIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Q0EzQUYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4=",
+            banks: banks,
         };
     },
     computed: {

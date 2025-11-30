@@ -2,7 +2,8 @@
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 $tmnCode = "MUAP6QM1";
-$returnUrl = "http://192.168.1.229:8000/api/client/payment/vnpay/callback";
+//đổi api
+$returnUrl = "http://192.168.1.111:8000/api/client/payment/vnpay/callback";
 $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
 $keys = [
@@ -18,7 +19,7 @@ echo "==================================================\n\n";
 foreach ($keys as $name => $secret) {
     $vnp_TxnRef = date("YmdHis") . "_" . $name;
     $vnp_Amount = 10000 * 100;
-    
+
     $inputData = array(
         "vnp_Version" => "2.1.0",
         "vnp_TmnCode" => $tmnCode,

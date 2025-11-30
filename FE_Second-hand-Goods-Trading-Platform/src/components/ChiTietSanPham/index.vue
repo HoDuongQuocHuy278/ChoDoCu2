@@ -128,9 +128,6 @@
                 Mua ngay
               </router-link>
             </div>
-            <button >
-                <i class="bx bx-message-rounded-dots me-1"></i> Chat với người bán
-              </button>
             <div class="card bg-light border-0">
               <div class="card-body d-flex flex-column gap-2">
                 <div><i class="bx bx-check-circle text-success me-2"></i> Được kiểm duyệt bởi Chợ Đồ Cũ</div>
@@ -153,7 +150,7 @@
       <div class="row g-3">
         <article v-for="item in related" :key="item.id" class="col-6 col-md-4 col-lg-3">
           <div class="related-card card h-100">
-            <img :src="item.image || fallbackImg" class="card-img-top" :alt="item.name" @error="onImgError($event)">
+            <img :src="fixImage(item.image) || fallbackImg" class="card-img-top" :alt="item.name" @error="onImgError($event)">
             <div class="card-body">
               <h6 class="text-truncate">{{ item.name }}</h6>
               <p class="mb-2 text-muted small">{{ formatCurrency(finalPrice(item)) }}</p>
@@ -175,6 +172,7 @@
 
 <script>
 import axios from 'axios'
+import { fixImageUrl } from '../../utils/imageHelper'
 
 export default {
   name: 'ChiTietSanPham',
@@ -240,10 +238,13 @@ export default {
     buildImages(payload) {
       const gallery = []
       // Nhận image (single URL)
-      if (payload?.image) gallery.push(payload.image)
+      if (payload?.image) gallery.push(fixImageUrl(payload.image))
       // Nhận images (array)
       if (Array.isArray(payload?.images)) {
-        gallery.push(...payload.images.map(item => (typeof item === 'string' ? item : item.url)))
+        gallery.push(...payload.images.map(item => {
+            const url = typeof item === 'string' ? item : item.url
+            return fixImageUrl(url)
+        }))
       }
       // Fallback: nếu không có image/images, thử parse từ hinh_anh (có thể là JSON string hoặc URL string)
       if (!gallery.length && payload?.hinh_anh) {
@@ -253,14 +254,14 @@ export default {
             ? JSON.parse(payload.hinh_anh)
             : payload.hinh_anh
           if (Array.isArray(parsed)) {
-            gallery.push(...parsed.filter(item => typeof item === 'string' && item))
+            gallery.push(...parsed.filter(item => typeof item === 'string' && item).map(url => fixImageUrl(url)))
           } else if (typeof parsed === 'string' && parsed) {
-            gallery.push(parsed)
+            gallery.push(fixImageUrl(parsed))
           }
         } catch (e) {
           // Nếu parse lỗi, coi như là URL string đơn giản
           if (typeof payload.hinh_anh === 'string' && payload.hinh_anh) {
-            gallery.push(payload.hinh_anh)
+            gallery.push(fixImageUrl(payload.hinh_anh))
           }
         }
       }
@@ -298,6 +299,9 @@ export default {
       event.target.dataset.fallbackSet = 'true'
       event.target.src = this.fallbackImg
       event.target.onerror = null
+    },
+    fixImage(url) {
+        return fixImageUrl(url)
     },
     updateQty(delta) {
       const next = this.quantity + delta

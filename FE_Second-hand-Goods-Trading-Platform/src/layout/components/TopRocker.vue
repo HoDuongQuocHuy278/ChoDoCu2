@@ -164,10 +164,6 @@
                   <i class='bx bx-package'></i>
                   <span>Sản phẩm của tôi</span>
                 </router-link>
-                <router-link to="/trang-ban-hang" class="dropdown-item-modern" @click="closeUserMenu">
-                  <i class='bx bx-store'></i>
-                  <span>Trang bán hàng</span>
-                </router-link>
                 <div class="dropdown-divider"></div>
                 <button class="dropdown-item-modern logout-item" type="button" @click="handleLogout">
                   <i class='bx bx-log-out'></i>

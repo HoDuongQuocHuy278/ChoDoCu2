@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DonHang;
+use App\Models\KhachHang;
 use App\Models\SanPham;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -50,6 +51,9 @@ class DonHangController extends Controller
 
         $order->load('sanPham');
 
+        // Tăng số lượt mua của sản phẩm
+        $product->increment('so_luot_mua', $quantity);
+
         // Tạo thông báo cho buyer
         if ($authUser) {
             \App\Http\Controllers\NotificationController::notifyOrder(
@@ -96,7 +100,7 @@ class DonHangController extends Controller
     public function getBuyerOrders(Request $request)
     {
         $user = $request->user('sanctum');
-        
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -106,7 +110,7 @@ class DonHangController extends Controller
 
         // Pagination
         $perPage = min((int) $request->get('per_page', 20), 100);
-        
+
         // Lấy đơn hàng theo khach_hang_id hoặc email/số điện thoại của user
         $query = DonHang::where(function($query) use ($user) {
                 $query->where('khach_hang_id', $user->id)
@@ -126,19 +130,19 @@ class DonHangController extends Controller
             })
             ->with(['sanPham:id,ten_san_pham,gia,hinh_anh,tinh_thanh,dia_chi,khach_hang_id', 'sanPham.khachHang:id,ho_va_ten,email,so_dien_thoai'])
             ->orderBy('created_at', 'desc');
-        
+
         $paginated = $query->paginate($perPage);
-        
+
         $orders = $paginated->getCollection()->map(function($order) {
                 $productImages = $order->sanPham ? $order->sanPham->getImagesArray() : [];
-                
+
                 // Tính thời gian dự kiến giao hàng (3-5 ngày từ ngày đặt hàng)
                 $estimatedDeliveryDate = \Carbon\Carbon::parse($order->created_at)->addDays(3)->format('Y-m-d H:i:s');
                 $estimatedDeliveryDateFormatted = \Carbon\Carbon::parse($order->created_at)->addDays(3)->format('d/m/Y');
-                
+
                 // Lấy địa chỉ của seller (từ sản phẩm)
                 $sellerLocation = $order->sanPham->tinh_thanh ?? $order->sanPham->dia_chi ?? 'Chưa cập nhật';
-                
+
                 return [
                     'id' => $order->id,
                     'order_code' => $order->ma_don_hang,
@@ -176,7 +180,7 @@ class DonHangController extends Controller
     public function getSellerOrders(Request $request)
     {
         $user = $request->user('sanctum');
-        
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -186,19 +190,19 @@ class DonHangController extends Controller
 
         // Pagination
         $perPage = min((int) $request->get('per_page', 20), 100);
-        
+
         // Lấy tất cả sản phẩm của seller
         $productIds = \App\Models\SanPham::where('khach_hang_id', $user->id)->pluck('id');
-        
+
         $query = DonHang::whereIn('san_pham_id', $productIds)
             ->with(['sanPham:id,ten_san_pham,gia,hinh_anh', 'khachHang:id,ho_va_ten,email'])
             ->orderBy('created_at', 'desc');
-        
+
         $paginated = $query->paginate($perPage);
-        
+
         $orders = $paginated->getCollection()->map(function($order) {
                 $productImages = $order->sanPham ? $order->sanPham->getImagesArray() : [];
-                
+
                 return [
                     'id' => $order->id,
                     'order_code' => $order->ma_don_hang,
@@ -237,7 +241,7 @@ class DonHangController extends Controller
     public function updateOrderStatus(Request $request, DonHang $donHang)
     {
         $user = $request->user('sanctum');
-        
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -270,7 +274,7 @@ class DonHangController extends Controller
                 'delivered' => 'delivered',
                 'completed' => 'completed',
             ];
-            
+
             if (isset($statusMap[$request->status])) {
                 \App\Http\Controllers\NotificationController::notifyOrder(
                     $donHang->khach_hang_id,
@@ -294,7 +298,7 @@ class DonHangController extends Controller
     public function confirmReceived(Request $request, DonHang $donHang)
     {
         $user = $request->user('sanctum');
-        
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -346,7 +350,7 @@ class DonHangController extends Controller
     public function updatePaymentStatus(Request $request, DonHang $donHang)
     {
         $user = $request->user('sanctum');
-        
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -384,6 +388,88 @@ class DonHangController extends Controller
         } while (DonHang::where('ma_don_hang', $code)->exists());
 
         return $code;
+    }
+    // ADMIN METHODS
+
+    public function adminIndex(Request $request)
+    {
+        $query = DonHang::with(['sanPham', 'khachHang']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('q')) {
+            $q = $request->q;
+            $query->where('ma_don_hang', 'like', "%$q%")
+                  ->orWhere('buyer_name', 'like', "%$q%")
+                  ->orWhere('buyer_phone', 'like', "%$q%");
+        }
+
+        $orders = $query->orderByDesc('created_at')->paginate(20);
+
+        return response()->json([
+            'status' => true,
+            'data' => $orders
+        ]);
+    }
+
+    public function updateStatus(Request $request, DonHang $donHang)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,processing,shipped,delivered,completed,cancelled',
+            'payment_status' => 'nullable|in:pending,awaiting_payment,paid,completed,failed',
+        ]);
+
+        $donHang->status = $request->status;
+        if ($request->filled('payment_status')) {
+            $donHang->payment_status = $request->payment_status;
+        }
+        $donHang->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cập nhật đơn hàng thành công',
+            'data' => $donHang
+        ]);
+    }
+
+    public function laythongtinnganhang(Request $request){
+        $request->validate([
+            'order_id' => 'required|exists:don_hangs,id'
+        ]);
+        
+        $donHang = DonHang::findOrFail($request->order_id);
+        
+        // Debug: Log order and product info
+        \Log::info('Fetching bank info for order', [
+            'order_id' => $donHang->id,
+            'san_pham_id' => $donHang->san_pham_id
+        ]);
+
+        $noidung = SanPham::where('san_phams.id',$donHang->san_pham_id)
+        ->join('khach_hangs','san_phams.khach_hang_id','=','khach_hangs.id')
+        ->select('khach_hangs.ten_ngan_hang','khach_hangs.so_tai_khoan','khach_hangs.chu_tai_khoan')
+        ->first();
+        
+        // Debug: Log the result
+        \Log::info('Bank info result', [
+            'result' => $noidung
+        ]);
+        
+        // Check if bank info is empty
+        if (!$noidung || !$noidung->ten_ngan_hang || !$noidung->so_tai_khoan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Người bán chưa cập nhật đầy đủ thông tin ngân hàng (ten_ngan_hang, so_tai_khoan)',
+                'data' => null
+            ], 400);
+        }
+        
+        return response()->json([
+            'status' => true,
+            'data' => $noidung
+        ]);
     }
 }
 

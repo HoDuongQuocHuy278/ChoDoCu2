@@ -1,0 +1,1 @@
+import{A as a}from"./config-162ba8a8.js";const r=t=>{if(!t)return"";if(t.startsWith("http")||t.startsWith("data:"))return t;const s=t.startsWith("/")?t.substring(1):t;return`${a}/${s}`};export{r as f};

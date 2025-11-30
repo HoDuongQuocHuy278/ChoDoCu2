@@ -1,0 +1,2 @@
+HTTP Code: 400
+Response: {"success":false,"message":"Thiếu thông tin đầu vào"}

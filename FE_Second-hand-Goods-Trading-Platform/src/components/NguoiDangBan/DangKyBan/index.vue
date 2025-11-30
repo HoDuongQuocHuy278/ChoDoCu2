@@ -182,141 +182,139 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+<script>
 import axios from 'axios'
 
-const router = useRouter()
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/client'
-
-const agreedToTerms = ref(false)
-const submitting = ref(false)
-const isSeller = ref(false)
-const errorMessage = ref('')
-const errors = reactive({
-  terms: ''
-})
-
-// Toast notification
-function showToast(message, type = 'info') {
-  if (window.$toast) {
-    if (type === 'error') {
-      window.$toast.error(message)
-    } else if (type === 'success') {
-      window.$toast.success(message)
-    } else {
-      window.$toast.info(message)
-    }
-  } else {
-    alert(message)
-  }
-}
-
-// Kiểm tra đăng nhập
-function checkAuth() {
-  const token = localStorage.getItem('key_client')
-  if (!token) {
-    showToast('Vui lòng đăng nhập để đăng ký bán hàng', 'error')
-    setTimeout(() => {
-      router.push('/dang-nhap')
-    }, 1500)
-    return false
-  }
-  return true
-}
-
-// Kiểm tra trạng thái đăng ký bán
-async function checkSellerStatus() {
-  const token = localStorage.getItem('key_client')
-  if (!token) return
-
-  try {
-    const { data } = await axios.get(`${API_BASE_URL}/check-seller-status`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    if (data?.status && data?.is_seller) {
-      isSeller.value = true
-    }
-  } catch (err) {
-    console.error('Error checking seller status:', err)
-  }
-}
-
-// Xử lý đăng ký bán hàng
-async function handleRegister() {
-  // Reset errors
-  errors.terms = ''
-  errorMessage.value = ''
-
-  // Validate
-  if (!agreedToTerms.value) {
-    errors.terms = 'Bạn cần đồng ý với điều khoản đăng ký bán hàng'
-    return
-  }
-
-  // Kiểm tra đăng nhập
-  if (!checkAuth()) return
-
-  submitting.value = true
-
-  try {
-    const token = localStorage.getItem('key_client')
-    
-    const { data } = await axios.post(
-      `${API_BASE_URL}/dang-ky-ban`,
-      {
-        agreed_to_terms: true
+export default {
+  data() {
+    return {
+      agreedToTerms: false,
+      submitting: false,
+      isSeller: false,
+      errorMessage: '',
+      errors: {
+        terms: ''
       },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/client'
+    }
+  },
+  mounted() {
+    // Kiểm tra đăng nhập
+    if (!this.checkAuth()) {
+      return
+    }
+    
+    // Kiểm tra trạng thái đăng ký bán
+    this.checkSellerStatus()
+  },
+  methods: {
+    showToast(message, type = 'info') {
+      if (window.$toast) {
+        if (type === 'error') {
+          window.$toast.error(message)
+        } else if (type === 'success') {
+          window.$toast.success(message)
+        } else {
+          window.$toast.info(message)
         }
+      } else {
+        alert(message)
       }
-    )
+    },
+    
+    checkAuth() {
+      const token = localStorage.getItem('key_client')
+      if (!token) {
+        this.showToast('Vui lòng đăng nhập để đăng ký bán hàng', 'error')
+        setTimeout(() => {
+          this.$router.push('/dang-nhap')
+        }, 1500)
+        return false
+      }
+      return true
+    },
+    
+    async checkSellerStatus() {
+      const token = localStorage.getItem('key_client')
+      if (!token) return
 
-    if (data?.status) {
-      isSeller.value = true
-      showToast(data.message || 'Đăng ký bán hàng thành công!', 'success')
-      
-      // Redirect sau 2 giây
-      setTimeout(() => {
-        router.push('/sell')
-      }, 2000)
-    } else {
-      errorMessage.value = data?.message || 'Có lỗi xảy ra khi đăng ký bán hàng'
-      showToast(errorMessage.value, 'error')
-    }
-  } catch (err) {
-    console.error('Error registering as seller:', err)
-    const msg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi đăng ký bán hàng'
-    errorMessage.value = msg
-    showToast(msg, 'error')
+      try {
+        const { data } = await axios.get(`${this.API_BASE_URL}/check-seller-status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
 
-    // Nếu lỗi authentication, redirect về trang đăng nhập
-    if (err?.response?.status === 401) {
-      setTimeout(() => {
-        router.push('/dang-nhap')
-      }, 2000)
+        if (data?.status && data?.is_seller) {
+          this.isSeller = true
+        }
+      } catch (err) {
+        console.error('Error checking seller status:', err)
+      }
+    },
+    
+    async handleRegister() {
+      // Reset errors
+      this.errors.terms = ''
+      this.errorMessage = ''
+
+      // Validate
+      if (!this.agreedToTerms) {
+        this.errors.terms = 'Bạn cần đồng ý với điều khoản đăng ký bán hàng'
+        return
+      }
+
+      // Kiểm tra đăng nhập
+      if (!this.checkAuth()) return
+
+      this.submitting = true
+
+      try {
+        const token = localStorage.getItem('key_client')
+        
+        const { data } = await axios.post(
+          `${this.API_BASE_URL}/dang-ky-ban`,
+          {
+            agreed_to_terms: true
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+
+        if (data?.status) {
+          this.isSeller = true
+          this.showToast(data.message || 'Đăng ký bán hàng thành công!', 'success')
+          
+          // Redirect sau 2 giây
+          setTimeout(() => {
+            this.$router.push('/sell')
+          }, 2000)
+        } else {
+          this.errorMessage = data?.message || 'Có lỗi xảy ra khi đăng ký bán hàng'
+          this.showToast(this.errorMessage, 'error')
+        }
+      } catch (err) {
+        console.error('Error registering as seller:', err)
+        const msg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi đăng ký bán hàng'
+        this.errorMessage = msg
+        this.showToast(msg, 'error')
+
+        // Nếu lỗi authentication, redirect về trang đăng nhập
+        if (err?.response?.status === 401) {
+          setTimeout(() => {
+            this.$router.push('/dang-nhap')
+          }, 2000)
+        }
+      } finally {
+        this.submitting = false
+      }
     }
-  } finally {
-    submitting.value = false
   }
 }
-
-onMounted(() => {
-  // Kiểm tra đăng nhập
-  if (!checkAuth()) {
-    return
-  }
-  
-  // Kiểm tra trạng thái đăng ký bán
-  checkSellerStatus()
-})
 </script>
 
 <style scoped>
@@ -336,4 +334,3 @@ onMounted(() => {
   font-size: 1.2rem;
 }
 </style>
-

@@ -91,6 +91,10 @@ class SanPhamController extends Controller
                 'image' => !empty($images) ? $images[0] : null,
                 'images' => $images,
                 'condition' => $sanPham->tinh_trang,
+                'so_luong' => $sanPham->so_luong ?? 1,
+                'quantity' => $sanPham->so_luong ?? 1,
+                'luot_xem' => $sanPham->luot_xem ?? 0,
+                'so_luot_mua' => $sanPham->so_luot_mua ?? 0,
             ];
         });
 
@@ -143,8 +147,11 @@ class SanPhamController extends Controller
             ] : null,
             'khach_hang_id' => $san_pham->khach_hang_id, // Thêm field này để frontend có thể check
             'seller_id' => $san_pham->khach_hang_id, // Alias cho seller_id
-            'quantity' => 1, // Có thể thêm field quantity sau
-            'stock' => 1,
+            'quantity' => $san_pham->so_luong ?? 1, // Có thể thêm field quantity sau
+            'so_luong' => $san_pham->so_luong ?? 1,
+            'stock' => $san_pham->so_luong ?? 1,
+            'luot_xem' => $san_pham->luot_xem ?? 0,
+            'so_luot_mua' => $san_pham->so_luot_mua ?? 0,
             'slug' => $san_pham->id,
         ];
 

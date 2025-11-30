@@ -141,236 +141,225 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted } from 'vue'
+<script>
 import axios from 'axios'
 
-// --- Cấu hình API tại đây (thay nếu route khác) ---
-const API_GET = '/api/khach-hang/getData'
-const API_ADD = '/api/khach-hang/addData'
-const API_UPDATE = '/api/khach-hang/update'
-const API_DELETE = '/api/khach-hang/destroy'
-const API_CHANGE_BLOCK = '/api/khach-hang/changeStatus'
-const API_CHANGE_ACTIVE = '/api/khach-hang/changeActive'
-const API_SEARCH = '/api/khach-hang/search'
-// -----------------------------------------------------
-
-// Nếu cần token (sanctum / bearer), đặt ở đây:
-const TOKEN = null // ví dụ: localStorage.getItem('token') hoặc null
-if (TOKEN) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${TOKEN}`
-}
-
-const users = ref([])
-const searchQuery = ref('')
-
-const isEditing = ref(false)
-const form = reactive({
-  id: null,
-  ho_va_ten: '',
-  email: '',
-  so_dien_thoai: '',
-  password: '',
-  cccd: '',
-  ngay_sinh: '',
-  is_block: 0,
-  is_active: 0
-})
-
-const userToDelete = ref(null)
-const toastMessage = ref('')
-
-const userModalEl = ref(null)
-const confirmDeleteModalEl = ref(null)
-const toastEl = ref(null)
-
-let userModalInstance = null
-let confirmDeleteModalInstance = null
-let toastInstance = null
-
-onMounted(() => {
-  // Khởi tạo bootstrap modal & toast
-  // eslint-disable-next-line no-undef
-  userModalInstance = new bootstrap.Modal(userModalEl.value)
-  // eslint-disable-next-line no-undef
-  confirmDeleteModalInstance = new bootstrap.Modal(confirmDeleteModalEl.value)
-  // eslint-disable-next-line no-undef
-  toastInstance = new bootstrap.Toast(toastEl.value)
-  fetchUsers()
-})
-
-function showToast(msg) {
-  toastMessage.value = msg
-  // update body text
-  toastEl.value.querySelector('.toast-body').innerText = msg
-  toastInstance.show()
-}
-
-// Format ngày (giản)
-function formatDate(d) {
-  if (!d) return ''
-  return d.slice(0, 10)
-}
-
-async function fetchUsers() {
-  try {
-    const res = await axios.get(API_GET)
-    if (res.data && res.data.data) {
-      users.value = res.data.data
-    } else {
-      users.value = res.data || []
+export default {
+  data() {
+    return {
+      API_GET: '/api/khach-hang/getData',
+      API_ADD: '/api/khach-hang/addData',
+      API_UPDATE: '/api/khach-hang/update',
+      API_DELETE: '/api/khach-hang/destroy',
+      API_CHANGE_BLOCK: '/api/khach-hang/changeStatus',
+      API_CHANGE_ACTIVE: '/api/khach-hang/changeActive',
+      API_SEARCH: '/api/khach-hang/search',
+      users: [],
+      searchQuery: '',
+      isEditing: false,
+      form: {
+        id: null,
+        ho_va_ten: '',
+        email: '',
+        so_dien_thoai: '',
+        password: '',
+        cccd: '',
+        ngay_sinh: '',
+        is_block: 0,
+        is_active: 0
+      },
+      userToDelete: null,
+      toastMessage: '',
+      userModalInstance: null,
+      confirmDeleteModalInstance: null,
+      toastInstance: null
     }
-  } catch (err) {
-    console.error(err)
-    showToast('Lấy dữ liệu thất bại')
-  }
-}
-
-function resetSearch() {
-  searchQuery.value = ''
-  fetchUsers()
-}
-
-async function searchUsers() {
-  try {
-    const res = await axios.post(API_SEARCH, { noi_dung: searchQuery.value })
-    if (res.data && res.data.data) {
-      users.value = res.data.data
+  },
+  mounted() {
+    const TOKEN = null
+    if (TOKEN) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${TOKEN}`
     }
-  } catch (err) {
-    console.error(err)
-    showToast('Tìm kiếm lỗi')
-  }
-}
-
-function openAddModal() {
-  isEditing.value = false
-  Object.assign(form, {
-    id: null,
-    ho_va_ten: '',
-    email: '',
-    so_dien_thoai: '',
-    password: '',
-    cccd: '',
-    ngay_sinh: '',
-    is_block: 0,
-    is_active: 0
-  })
-  userModalInstance.show()
-}
-
-function openEditModal(user) {
-  isEditing.value = true
-  Object.assign(form, {
-    id: user.id,
-    ho_va_ten: user.ho_va_ten,
-    email: user.email,
-    so_dien_thoai: user.so_dien_thoai,
-    password: user.password || '',
-    cccd: user.cccd,
-    ngay_sinh: user.ngay_sinh ? user.ngay_sinh.slice(0,10) : '',
-    is_block: user.is_block ? 1 : 0,
-    is_active: user.is_active ? 1 : 0
-  })
-  userModalInstance.show()
-}
-
-function closeModal() {
-  userModalInstance.hide()
-}
-
-function confirmDelete(user) {
-  userToDelete.value = user
-  confirmDeleteModalInstance.show()
-}
-
-function closeDeleteModal() {
-  userToDelete.value = null
-  confirmDeleteModalInstance.hide()
-}
-
-async function deleteUserConfirmed() {
-  try {
-    const res = await axios.post(API_DELETE, { id: userToDelete.value.id })
-    if (res.data && res.data.status) {
-      showToast(res.data.message || 'Xóa thành công')
-      fetchUsers()
-    } else {
-      showToast(res.data.message || 'Xóa thất bại')
-    }
-  } catch (err) {
-    console.error(err)
-    showToast('Lỗi khi xóa')
-  } finally {
-    closeDeleteModal()
-  }
-}
-
-async function saveUser() {
-  try {
-    if (isEditing.value) {
-      // Update
-      const payload = { ...form }
-      const res = await axios.post(API_UPDATE, payload)
-      if (res.data && res.data.status) {
-        showToast(res.data.message || 'Cập nhật thành công')
-        fetchUsers()
-        closeModal()
-      } else {
-        showToast(res.data.message || 'Cập nhật thất bại')
+    
+    // eslint-disable-next-line no-undef
+    this.userModalInstance = new bootstrap.Modal(this.$refs.userModalEl)
+    // eslint-disable-next-line no-undef
+    this.confirmDeleteModalInstance = new bootstrap.Modal(this.$refs.confirmDeleteModalEl)
+    // eslint-disable-next-line no-undef
+    this.toastInstance = new bootstrap.Toast(this.$refs.toastEl)
+    
+    this.fetchUsers()
+  },
+  methods: {
+    showToast(msg) {
+      this.toastMessage = msg
+      this.$refs.toastEl.querySelector('.toast-body').innerText = msg
+      this.toastInstance.show()
+    },
+    
+    formatDate(d) {
+      if (!d) return ''
+      return d.slice(0, 10)
+    },
+    
+    async fetchUsers() {
+      try {
+        const res = await axios.get(this.API_GET)
+        if (res.data && res.data.data) {
+          this.users = res.data.data
+        } else {
+          this.users = res.data || []
+        }
+      } catch (err) {
+        console.error(err)
+        this.showToast('Lấy dữ liệu thất bại')
       }
-    } else {
-      // Add
-      const payload = {
-        ho_va_ten: form.ho_va_ten,
-        email: form.email,
-        so_dien_thoai: form.so_dien_thoai,
-        cccd: form.cccd,
-        ngay_sinh: form.ngay_sinh
-        // Backend sử dụng password mặc định '123456' theo controller của bạn
+    },
+    
+    resetSearch() {
+      this.searchQuery = ''
+      this.fetchUsers()
+    },
+    
+    async searchUsers() {
+      try {
+        const res = await axios.post(this.API_SEARCH, { noi_dung: this.searchQuery })
+        if (res.data && res.data.data) {
+          this.users = res.data.data
+        }
+      } catch (err) {
+        console.error(err)
+        this.showToast('Tìm kiếm lỗi')
       }
-      const res = await axios.post(API_ADD, payload)
-      if (res.data && res.data.status) {
-        showToast(res.data.message || 'Thêm thành công')
-        fetchUsers()
-        closeModal()
-      } else {
-        showToast(res.data.message || 'Thêm thất bại')
+    },
+    
+    openAddModal() {
+      this.isEditing = false
+      Object.assign(this.form, {
+        id: null,
+        ho_va_ten: '',
+        email: '',
+        so_dien_thoai: '',
+        password: '',
+        cccd: '',
+        ngay_sinh: '',
+        is_block: 0,
+        is_active: 0
+      })
+      this.userModalInstance.show()
+    },
+    
+    openEditModal(user) {
+      this.isEditing = true
+      Object.assign(this.form, {
+        id: user.id,
+        ho_va_ten: user.ho_va_ten,
+        email: user.email,
+        so_dien_thoai: user.so_dien_thoai,
+        password: user.password || '',
+        cccd: user.cccd,
+        ngay_sinh: user.ngay_sinh ? user.ngay_sinh.slice(0,10) : '',
+        is_block: user.is_block ? 1 : 0,
+        is_active: user.is_active ? 1 : 0
+      })
+      this.userModalInstance.show()
+    },
+    
+    closeModal() {
+      this.userModalInstance.hide()
+    },
+    
+    confirmDelete(user) {
+      this.userToDelete = user
+      this.confirmDeleteModalInstance.show()
+    },
+    
+    closeDeleteModal() {
+      this.userToDelete = null
+      this.confirmDeleteModalInstance.hide()
+    },
+    
+    async deleteUserConfirmed() {
+      try {
+        const res = await axios.post(this.API_DELETE, { id: this.userToDelete.id })
+        if (res.data && res.data.status) {
+          this.showToast(res.data.message || 'Xóa thành công')
+          this.fetchUsers()
+        } else {
+          this.showToast(res.data.message || 'Xóa thất bại')
+        }
+      } catch (err) {
+        console.error(err)
+        this.showToast('Lỗi khi xóa')
+      } finally {
+        this.closeDeleteModal()
+      }
+    },
+    
+    async saveUser() {
+      try {
+        if (this.isEditing) {
+          const payload = { ...this.form }
+          const res = await axios.post(this.API_UPDATE, payload)
+          if (res.data && res.data.status) {
+            this.showToast(res.data.message || 'Cập nhật thành công')
+            this.fetchUsers()
+            this.closeModal()
+          } else {
+            this.showToast(res.data.message || 'Cập nhật thất bại')
+          }
+        } else {
+          const payload = {
+            ho_va_ten: this.form.ho_va_ten,
+            email: this.form.email,
+            so_dien_thoai: this.form.so_dien_thoai,
+            cccd: this.form.cccd,
+            ngay_sinh: this.form.ngay_sinh
+          }
+          const res = await axios.post(this.API_ADD, payload)
+          if (res.data && res.data.status) {
+            this.showToast(res.data.message || 'Thêm thành công')
+            this.fetchUsers()
+            this.closeModal()
+          } else {
+            this.showToast(res.data.message || 'Thêm thất bại')
+          }
+        }
+      } catch (err) {
+        console.error(err)
+        this.showToast('Lỗi khi lưu dữ liệu')
+      }
+    },
+    
+    async toggleBlock(user) {
+      try {
+        const res = await axios.post(this.API_CHANGE_BLOCK, { id: user.id })
+        if (res.data && res.data.status) {
+          this.showToast(res.data.message || 'Thay đổi trạng thái block thành công')
+          this.fetchUsers()
+        } else {
+          this.showToast(res.data.message || 'Thao tác thất bại')
+        }
+      } catch (err) {
+        console.error(err)
+        this.showToast('Lỗi thay đổi trạng thái')
+      }
+    },
+    
+    async toggleActive(user) {
+      try {
+        const res = await axios.post(this.API_CHANGE_ACTIVE, { id: user.id })
+        if (res.data && res.data.status) {
+          this.showToast(res.data.message || 'Thay đổi trạng thái active thành công')
+          this.fetchUsers()
+        } else {
+          this.showToast(res.data.message || 'Thao tác thất bại')
+        }
+      } catch (err) {
+        console.error(err)
+        this.showToast('Lỗi thay đổi trạng thái')
       }
     }
-  } catch (err) {
-    console.error(err)
-    showToast('Lỗi khi lưu dữ liệu')
-  }
-}
-
-async function toggleBlock(user) {
-  try {
-    const res = await axios.post(API_CHANGE_BLOCK, { id: user.id })
-    if (res.data && res.data.status) {
-      showToast(res.data.message || 'Thay đổi trạng thái block thành công')
-      fetchUsers()
-    } else {
-      showToast(res.data.message || 'Thao tác thất bại')
-    }
-  } catch (err) {
-    console.error(err)
-    showToast('Lỗi thay đổi trạng thái')
-  }
-}
-
-async function toggleActive(user) {
-  try {
-    const res = await axios.post(API_CHANGE_ACTIVE, { id: user.id })
-    if (res.data && res.data.status) {
-      showToast(res.data.message || 'Thay đổi trạng thái active thành công')
-      fetchUsers()
-    } else {
-      showToast(res.data.message || 'Thao tác thất bại')
-    }
-  } catch (err) {
-    console.error(err)
-    showToast('Lỗi thay đổi trạng thái')
   }
 }
 </script>
