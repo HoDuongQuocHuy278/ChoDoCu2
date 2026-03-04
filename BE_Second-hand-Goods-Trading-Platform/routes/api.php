@@ -78,6 +78,8 @@ Route::get('/user', function (Request $request) {
     Route::prefix('client')->group(function () {
         Route::post('/don-hang', [DonHangController::class, 'store']);
         Route::get('/don-hang/{don_hang}', [DonHangController::class, 'show']);
+        // Kiểm tra trạng thái thanh toán (cho polling)
+        Route::get('/don-hang/{order_id}/payment-status', [DonHangController::class, 'checkPaymentStatus']);
         // Đơn hàng của buyer
         Route::middleware(['auth:sanctum'])->get('/don-hang-mua', [DonHangController::class, 'getBuyerOrders']);
         Route::middleware(['auth:sanctum'])->post('/don-hang/{don_hang}/xac-nhan-nhan-hang', [DonHangController::class, 'confirmReceived']);
@@ -122,8 +124,16 @@ Route::get('/user', function (Request $request) {
 
     // ADMIN (quản trị)
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
-        // Dashboard Stats
+        // trang admin
         Route::get('/stats', [KhachHangController::class, 'adminStats']);
+        
+        // Dữ liệu biểu đồ dashboard
+        Route::get('/chart-data', [KhachHangController::class, 'getDashboardChartData']);
+        Route::get('/revenue-by-day', [KhachHangController::class, 'getRevenueByDay']);
+        Route::get('/orders-by-day', [KhachHangController::class, 'getOrdersByDay']);
+        Route::get('/order-status-stats', [KhachHangController::class, 'getOrderStatusStats']);
+        Route::get('/payment-method-stats', [KhachHangController::class, 'getPaymentMethodStats']);
+        Route::get('/top-products', [KhachHangController::class, 'getTopProducts']);
 
         // Quản lý người dùng
         Route::get('/users', [KhachHangController::class, 'adminIndex']);
@@ -157,9 +167,15 @@ Route::prefix('client')->group(function () {
     // MBBank
     Route::post('/payment/mbbank', [ThanhToanController::class, 'mbbank_payment']);
     Route::post('/payment/qr', [DonHangController::class, 'laythongtinnganhang']);
-    // Test endpoint (có thể xóa sau khi debug xong)
     Route::get('/payment/mbbank/test', [ThanhToanController::class, 'testMbbankApi']);
+    
+    // Auto Check Payment - Tự động kiểm tra và cập nhật thanh toán
+    Route::post('/payment/auto-check', [DonHangController::class, 'autoCheckPayment']);
 });
 
-// Route cũ để tương thích
 Route::post('/vnpay_payment', [ThanhToanController::class, 'vnpay_payment']);
+
+// Temporary Debug Route
+Route::get('/debug/order/{code}', function ($code) {
+    return \App\Models\DonHang::where('ma_don_hang', $code)->first();
+});

@@ -198,15 +198,16 @@
 <script>
 /* global bootstrap */
 import axios from 'axios'
+import { ADMIN_API_URL } from '../../../config';
 
 export default {
   data() {
     return {
-      LIST_API: 'http://127.0.0.1:8000/api/admin/orders',
-      UPDATE_STATUS_API: (id) => `http://127.0.0.1:8000/api/admin/orders/${id}/status`,
-      UPDATE_PAYMENT_API: (id) => `http://127.0.0.1:8000/api/admin/orders/${id}/payment`,
-      EXPORT_API: 'http://127.0.0.1:8000/api/admin/orders/export',
-      CANCEL_API: (id) => `http://127.0.0.1:8000/api/admin/orders/${id}/cancel`,
+      LIST_API: `${ADMIN_API_URL}/orders`,
+      UPDATE_STATUS_API: (id) => `${ADMIN_API_URL}/orders/${id}/status`,
+      UPDATE_PAYMENT_API: (id) => `${ADMIN_API_URL}/orders/${id}/payment`,
+      EXPORT_API: `${ADMIN_API_URL}/orders/export`,
+      CANCEL_API: (id) => `${ADMIN_API_URL}/orders/${id}/cancel`,
       filters: {
         keyword: '',
         status: '',

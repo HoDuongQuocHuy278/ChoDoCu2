@@ -169,7 +169,7 @@ export default {
       if(!this.agree){ this.touched.agree = true; this.validate(); return }
 
       this.isLoading = true
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/client'
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.61:8000/api/client'
       try{
         const res = await axios.post(`${API_BASE_URL}/dang-ky`, this.user)
         if(res.data?.status){

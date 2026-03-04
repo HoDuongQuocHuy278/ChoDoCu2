@@ -46,7 +46,7 @@
             <td>
               <div class="product-info">
                 <img :src="getProductImage(order)" alt="Product" class="product-thumb">
-                <span>{{ order.san_pham ? order.san_pham.ten_san_pham : 'Sản phẩm đã xóa' }}</span>
+                <span>{{ order.san_pham ? (order.san_pham.ten || order.san_pham.ten_san_pham) : 'Sản phẩm đã xóa' }}</span>
               </div>
             </td>
             <td>{{ formatCurrency(order.tong_tien) }}</td>
@@ -151,11 +151,15 @@ export default {
   methods: {
     async fetchOrders() {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token") || localStorage.getItem("key_client");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
         const response = await axios.get(`${ADMIN_API_URL}/orders`, {
           params: {
             page: this.currentPage,
-            q: this.searchQuery,
+            search: this.searchQuery,
             status: this.filterStatus,
           },
           headers: { Authorization: `Bearer ${token}` }

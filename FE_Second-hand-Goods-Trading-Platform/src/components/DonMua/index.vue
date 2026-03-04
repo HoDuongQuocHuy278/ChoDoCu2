@@ -61,7 +61,7 @@
         <div class="order-body">
           <div class="product-section">
             <img 
-              :src="order.product_image || fallbackImg" 
+              :src="getImageUrl(order.product_image)" 
               :alt="order.product_name"
               class="product-img"
               @error="onImgError($event)"
@@ -168,6 +168,7 @@
 
 <script>
 import axios from "axios";
+import { APP_URL, CLIENT_API_URL } from '../../config';
 
 export default {
   name: "BuyerOrders",
@@ -179,7 +180,7 @@ export default {
       searchText: "",
       filterStatus: "all",
       fallbackImg: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMDAgMTYwQzM0NS4yMjkgMTYwIDM4MiAxMjMuMjI5IDM4MiA3OEMzODIgMzIuNzcwOSAzNDUuMjI5IDYgMzAwIDZDMjU0Ljc3MCA2IDIxOCAzMi43NzA5IDIxOCA3OEMyMTggMTIzLjIyOSAyNTQuNzcwIDE2MCAzMDAgMTYwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzAwIDI0MEMyNTAgMjQwIDIxMCAyNTYgMTg1IDI4MEg0MTVDMzkwIDI1NiAzNTAgMjQwIDMwMCAyNDBaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjMwMCIgeT0iMzIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Q0EzQUYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4=",
-      API_BASE_URL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api/client",
+      API_BASE_URL: CLIENT_API_URL,
     };
   },
   
@@ -336,6 +337,12 @@ export default {
     
     onImgError(e) {
       e.target.src = this.fallbackImg;
+    },
+    
+    getImageUrl(imagePath) {
+      if (!imagePath) return this.fallbackImg;
+      if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
+      return APP_URL + (imagePath.startsWith('/') ? '' : '/') + imagePath;
     },
   },
 };

@@ -1,5 +1,10 @@
 <template>
   <div class="checkout-page">
+    <!-- ========================================== -->
+    <!-- LUỒNG THANH TOÁN TỪ GIỎ HÀNG (CART MODE) -->
+    <!-- ========================================== -->
+    <!-- Khi người dùng chọn nhiều sản phẩm từ giỏ hàng và nhấn "Thanh toán" -->
+    <!-- cartMode = true, có 3 bước: Kiểm tra SP → Nhập thông tin → Xác nhận -->
     <div v-if="cartMode">
       <div v-if="isLoading" class="loading-container">
         <div class="text-center py-5">
@@ -156,6 +161,7 @@
 
         <div class="row g-4 align-items-start">
           <div class="col-xl-8">
+            <!-- CART MODE - BƯỚC 1: Kiểm tra danh sách sản phẩm từ giỏ hàng -->
             <div v-if="cartStep === 1" class="cart-step-panel card border-0 shadow-sm">
               <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
                 <div>
@@ -214,6 +220,7 @@
               </div>
             </div>
 
+            <!-- CART MODE - BƯỚC 2: Nhập thông tin người mua và chọn PT thanh toán -->
             <div v-else-if="cartStep === 2" class="cart-step-panel card border-0 shadow-sm">
               <div class="card-header bg-white border-0">
                 <h5 class="fw-bold mb-1">Bước 2 · Thông tin & thanh toán</h5>
@@ -337,6 +344,7 @@
               </div>
             </div>
 
+            <!-- CART MODE - BƯỚC 3: Xác nhận và hoàn tất thanh toán -->
             <div v-else class="cart-step-panel card border-0 shadow-sm">
               <div class="card-header bg-white border-0">
                 <h5 class="fw-bold mb-1">Bước 3 · Kiểm tra & xác nhận</h5>
@@ -505,6 +513,12 @@
         </div>
       </div>
     </div>
+    
+    <!-- ========================================================= -->
+    <!-- LUỒNG THANH TOÁN TRỰC TIẾP TỪ TRANG SẢN PHẨM (SINGLE)  -->
+    <!-- ========================================================= -->
+    <!-- Khi người dùng nhấn "Mua ngay" từ trang chi tiết sản phẩm -->
+    <!-- cartMode = false, thanh toán 1 sản phẩm với 3 bước -->
     <template v-else>
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-container">
@@ -693,6 +707,7 @@
         <div class="row g-4">
           <!-- Left Column: Form -->
           <div class="col-lg-8">
+            <!-- SINGLE PRODUCT - BƯỚC 1: Nhập thông tin người mua -->
             <!-- Step 1: Order Information -->
             <div v-show="currentStep === 1" class="checkout-step">
               <div class="card shadow-sm">
@@ -797,6 +812,7 @@
               </div>
             </div>
 
+            <!-- SINGLE PRODUCT - BƯỚC 2: Chọn phương thức thanh toán -->
             <!-- Step 2: Payment Method -->
             <div v-show="currentStep === 2" class="checkout-step">
               <div class="card shadow-sm">
@@ -839,6 +855,7 @@
               </div>
             </div>
 
+            <!-- SINGLE PRODUCT - BƯỚC 3: Xác nhận thông tin và hoàn tất -->
             <!-- Step 3: Confirmation -->
             <div v-show="currentStep === 3" class="checkout-step">
               <div class="card shadow-sm">
@@ -1024,6 +1041,8 @@ const currentStep = ref(1)
 const paymentUrl = ref(null)
 const paymentData = ref(null)
 const processingPayment = ref(false)
+const paymentPollingInterval = ref(null)
+const isCheckingPayment = ref(false)
 const cartTotals = computed(() => {
   const subtotal = cartItems.value.reduce((sum, item) => sum + (Number(item.price) * Math.max(1, Number(item.quantity) || 1)), 0)
   return {
@@ -1674,7 +1693,7 @@ const submitCartOrder = async () => {
                   `Thanh toan ${createdOrders.length} don hang`
               )
               
-              if (!paymentResult.paymentData) paymentResult.paymentData = {}
+             if (!paymentResult.paymentData) paymentResult.paymentData = {}
               paymentResult.paymentData.qr_code = qrUrl
               paymentResult.paymentData.payment_url = null
               // Attach info for display
@@ -1682,21 +1701,35 @@ const submitCartOrder = async () => {
           }
       }
 
-
+    // Save result and update UI
     orderResult.value = {
       cart_mode: true,
       orders: createdOrders,
       total_amount: totalAmount,
       payment_method: selectedMethod
     }
+
     if (paymentResult) {
       cartPaymentResults.value = [{
-        orders: createdOrders,
-        paymentUrl: paymentResult.paymentUrl,
-        paymentData: paymentResult.paymentData
+        order_ids: createdOrders.map(o => o.id),
+        paymentUrl: paymentResult.paymentUrl || null,
+        paymentData: paymentResult.paymentData || null,
+        orders: createdOrders
       }]
     }
+
+    // Bước 4: Bắt đầu polling nếu là thanh toán online
+    if (selectedMethod === 'mbbank' || selectedMethod === 'vnpay') {
+      // Start polling cho đơn hàng đầu tiên (hoặc tất cả nếu cần)
+      if (createdOrders.length > 0) {
+        console.log(`[Cart Checkout] Starting payment polling for ${createdOrders.length} orders`)
+        // Polling đơn đầu tiên làm đại diện
+        startPaymentPolling(createdOrders[0].id)
+      }
+    }
+
     cartStep.value = 3
+    window.scrollTo({ top: 0, behavior: 'smooth' })
 
     // Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
     try {
@@ -1831,6 +1864,100 @@ const nextCartStep = () => {
 const prevCartStep = () => {
   if (cartStep.value > 1) {
     cartStep.value -= 1
+  }
+}
+
+// ========================================
+// PAYMENT STATUS POLLING FUNCTIONS
+// ========================================
+
+/**
+ * Kiểm tra trạng thái thanh toán của đơn hàng
+ */
+const checkOrderPaymentStatus = async (orderId) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/don-hang/${orderId}/payment-status`)
+    return response.data
+  } catch (error) {
+    console.error('Error checking payment status:', error)
+    return null
+  }
+}
+
+/**
+ * Bắt đầu polling kiểm tra thanh toán
+ */
+const startPaymentPolling = (orderId) => {
+  // Dừng polling cũ nếu có
+  stopPaymentPolling()
+  
+  console.log(`[Payment Polling] Started for order ${orderId}`)
+  
+  // Kiểm tra ngay lập tức
+  checkAndHandlePaymentStatus(orderId)
+  
+  // Polling mỗi 5 giây
+  paymentPollingInterval.value = setInterval(() => {
+    checkAndHandlePaymentStatus(orderId)
+  }, 5000)
+}
+
+/**
+ * Dừng polling
+ */
+const stopPaymentPolling = () => {
+  if (paymentPollingInterval.value) {
+    clearInterval(paymentPollingInterval.value)
+    paymentPollingInterval.value = null
+    console.log('[Payment Polling] Stopped')
+  }
+}
+
+/**
+ * Kiểm tra và xử lý khi thanh toán thành công
+ */
+const checkAndHandlePaymentStatus = async (orderId) => {
+  if (isCheckingPayment.value) {
+    return // Đang check, bỏ qua lần này
+  }
+  
+  isCheckingPayment.value = true
+  
+  try {
+    const result = await checkOrderPaymentStatus(orderId)
+    
+    if (result && result.status && result.data) {
+      const { is_paid, payment_status } = result.data
+      
+      console.log(`[Payment Polling] Status: ${payment_status}, Is Paid: ${is_paid}`)
+      
+      if (is_paid || payment_status === 'paid') {
+        // Thanh toán thành công!
+        console.log('[Payment Polling] ✅ Payment completed! Redirecting...')
+        
+        // Dừng polling
+        stopPaymentPolling()
+        
+        // Hiển thị thông báo thành công
+        if (window.$toast) {
+          window.$toast.success('Thanh toán thành công! Đang chuyển đến trang đơn hàng...')
+        }
+        
+        // Chờ 1.5 giây để user đọc thông báo rồi redirect
+        setTimeout(() => {
+          // Redirect đến trang đơn mua
+          if (cartMode.value) {
+            router.push('/don-mua')
+          } else {
+            router.push('/don-mua')
+          }
+        }, 1500)
+      }
+    }
+  } catch (error) {
+    console.error('[Payment Polling] Error:', error)
+  } finally {
+    isCheckingPayment.value = false
   }
 }
 

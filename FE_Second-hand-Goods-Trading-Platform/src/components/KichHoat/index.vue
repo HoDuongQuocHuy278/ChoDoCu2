@@ -18,7 +18,8 @@ export default {
             var payload = {
                 hash_active: this.hash_active
             };
-            axios.post('http://127.0.0.1:8000/api/client/kich-hoat', payload)
+            // đổi api
+            axios.post('http://192.168.1.61:8000/api/client/kich-hoat', payload)
                 .then((res) => {
                     if (res.data.status) {
                         this.$toast.success(res.data.message);

@@ -3,7 +3,7 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 $tmnCode = "MUAP6QM1";
 //đổi api
-$returnUrl = "http://192.168.1.111:8000/api/client/payment/vnpay/callback";
+$returnUrl = "http://192.168.1.61:8000/api/client/payment/vnpay/callback";
 $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
 $keys = [

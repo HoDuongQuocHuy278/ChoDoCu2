@@ -95,6 +95,36 @@ class DonHangController extends Controller
     }
 
     /**
+     * Kiểm tra trạng thái thanh toán của đơn hàng
+     * Dùng để frontend polling kiểm tra thanh toán thành công hay chưa
+     */
+    public function checkPaymentStatus($orderId)
+    {
+        $order = DonHang::find($orderId);
+        
+        if (!$order) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy đơn hàng',
+                'data' => null
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'order_id' => $order->id,
+                'ma_don_hang' => $order->ma_don_hang,
+                'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
+                'is_paid' => $order->payment_status === 'paid',
+                'order_status' => $order->status,
+                'tong_tien' => $order->tong_tien
+            ]
+        ]);
+    }
+
+    /**
      * Lấy danh sách đơn hàng của buyer (người mua)
      */
     public function getBuyerOrders(Request $request)
@@ -470,6 +500,169 @@ class DonHangController extends Controller
             'status' => true,
             'data' => $noidung
         ]);
+    }
+
+    /**
+     * Tự động kiểm tra và cập nhật trạng thái thanh toán từ lịch sử giao dịch MBBank
+     * API này được gọi định kỳ (cronjob) hoặc thủ công để kiểm tra các giao dịch mới
+     */
+    public function autoCheckPayment(Request $request)
+    {
+        try {
+            // Lấy thông tin đăng nhập từ env hoặc config
+            $username = env('MBBANK_USERNAME', '0775999005');
+            $password = env('MBBANK_PASSWORD', 'Huyfender2782005@');
+            $accountNumber = env('MBBANK_ACCOUNT_NUMBER', '0775999005');
+
+            // Lấy ngày bắt đầu và kết thúc từ request hoặc mặc định là hôm nay
+            $dayBegin = $request->input('day_begin', now()->format('d/m/Y'));
+            $dayEnd = $request->input('day_end', now()->format('d/m/Y'));
+
+            $payload = [
+                "USERNAME"  => $username,
+                "PASSWORD"  => $password,
+                "DAY_BEGIN" => $dayBegin,
+                "DAY_END"   => $dayEnd,
+                "NUMBER_MB" => $accountNumber
+            ];
+
+            // Gọi API MBBank để lấy lịch sử giao dịch
+            $client = new \GuzzleHttp\Client();
+            $apiUrl = env('MBBANK_API_URL', 'https://api-mb.midstack.io.vn/api/transactions');
+            
+            $res = $client->request('POST', $apiUrl, [
+                'json' => $payload,
+                'timeout' => 30,
+                'connect_timeout' => 10
+            ]);
+
+            $data = json_decode($res->getBody(), true);
+            
+            if (!isset($data['data']['transactionHistoryList'])) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Không lấy được lịch sử giao dịch từ MBBank',
+                    'data' => null
+                ], 400);
+            }
+
+            $list_history = $data['data']['transactionHistoryList'];
+            $updated_orders = [];
+            $skipped_orders = [];
+
+            foreach ($list_history as $transaction) {
+                // Tìm mã đơn hàng từ description
+                // 1. Tìm theo ID số: CHODC{id} hoặc DH{id}
+                // 2. Tìm theo Mã đơn hàng: DH[A-Z0-9]+ (ví dụ DHO3Y9T85S)
+                
+                $id_don_hang = null;
+                $ma_don_hang = null;
+                $description = $transaction["description"];
+                
+                // Case 1: Tìm theo ID số
+                if (preg_match('/CHODC(\d+)/i', $description, $matches)) {
+                    $id_don_hang = (int)$matches[1];
+                } elseif (preg_match('/DH(\d+)/i', $description, $matches)) {
+                    $id_don_hang = (int)$matches[1];
+                }
+                
+                // Case 2: Tìm theo Mã đơn hàng (nếu không tìm thấy ID số hoặc để chắc chắn)
+                // Regex này tìm chuỗi bắt đầu bằng DH, theo sau là các ký tự chữ/số, độ dài từ 5-20 ký tự
+                if (preg_match('/(DH[A-Z0-9]{5,20})/i', $description, $matchesCode)) {
+                    $ma_don_hang = $matchesCode[1];
+                }
+
+                if (!$id_don_hang && !$ma_don_hang) {
+                    continue; // Bỏ qua nếu không tìm thấy thông tin nào
+                }
+
+                // Query tìm đơn hàng
+                $query = DonHang::query();
+                
+                if ($id_don_hang) {
+                    $query->where('id', $id_don_hang);
+                } elseif ($ma_don_hang) {
+                    $query->where('ma_don_hang', $ma_don_hang);
+                }
+                
+                $order = $query->where('payment_status', '!=', 'paid') // Chưa thanh toán
+                    ->where('tong_tien', '<=', $transaction["creditAmount"]) // Khớp số tiền
+                    ->whereIn('payment_method', ['vnpay', 'mbbank', 'momo']) // Chỉ thanh toán online
+                    ->first();
+
+                if ($order) {
+                    // 1. Cập nhật trạng thái thanh toán
+                    $order->payment_status = 'paid';
+                    
+                    // 2. Cập nhật trạng thái đơn hàng sang "Đã xác nhận" (confirmed) nếu đang là pending
+                    if ($order->status === 'pending') {
+                        $order->status = 'confirmed';
+                    }
+
+                    // 3. Lưu log giao dịch
+                    $order->payment_payload = json_encode([
+                        'transaction_id' => $transaction['refNo'] ?? null,
+                        'transaction_date' => $transaction['transactionDate'] ?? null,
+                        'amount' => $transaction['creditAmount'],
+                        'description' => $transaction['description'],
+                        'auto_verified_at' => now()->toDateTimeString(),
+                        'note' => 'Auto-verified via MBBank API (Matched by ' . ($id_don_hang ? 'ID' : 'Code') . ')'
+                    ]);
+                    
+                    $order->save();
+
+                    $updated_orders[] = [
+                        'order_id' => $order->id,
+                        'ma_don_hang' => $order->ma_don_hang,
+                        'amount' => $transaction['creditAmount'],
+                        'transaction_id' => $transaction['refNo'] ?? null,
+                        'new_status' => $order->status
+                    ];
+
+                    \Log::info("Auto-payment success for Order #{$order->id} ({$order->ma_don_hang}): Paid {$transaction['creditAmount']}");
+
+                } else {
+                    $skipped_orders[] = [
+                        'suspected_id' => $id_don_hang,
+                        'suspected_code' => $ma_don_hang,
+                        'amount' => $transaction['creditAmount'],
+                        'description' => $transaction['description'],
+                        'reason' => 'Không tìm thấy đơn hàng khớp, sai số tiền, hoặc đã thanh toán'
+                    ];
+                }
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Kiểm tra thanh toán tự động hoàn tất',
+                'data' => [
+                    'total_transactions' => count($list_history),
+                    'updated_orders' => $updated_orders,
+                    'updated_count' => count($updated_orders),
+                    'skipped_orders' => $skipped_orders,
+                    'skipped_count' => count($skipped_orders),
+                    'date_range' => [
+                        'from' => $dayBegin,
+                        'to' => $dayEnd
+                    ]
+                ]
+            ]);
+
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            \Log::error('MBBank API Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Lỗi kết nối API MBBank: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
+        } catch (\Exception $e) {
+            \Log::error('Auto Check Payment Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => false,
+                'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
     }
 }
 

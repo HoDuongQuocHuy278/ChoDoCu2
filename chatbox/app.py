@@ -11,8 +11,8 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 # đổi api
 # Laravel API base URL
-LARAVEL_API_URL = "http://192.168.1.229:8000/api/client"
-FRONTEND_URL = "http://192.168.1.229:5173"
+LARAVEL_API_URL = "http://192.168.1.61:8000/api/client"
+FRONTEND_URL = "http://192.168.1.61:5173"
 
 # Load intents
 with open('intents.json', 'r', encoding='utf-8') as f:

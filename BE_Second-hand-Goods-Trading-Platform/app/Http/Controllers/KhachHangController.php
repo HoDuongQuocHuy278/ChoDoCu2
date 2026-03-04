@@ -178,7 +178,7 @@ class KhachHangController extends Controller
         $view = "kichHoatTK";
         $noi_dung['ho_va_ten'] = $khachHang->ho_va_ten;
         // đổi api
-        $noi_dung['link'] = "http://192.168.1.111:5173//client/kich-hoat/" . $key;
+        $noi_dung['link'] = "http://192.168.1.61/client/kich-hoat/" . $key;
         Mail::to($request->email)->send(new MasterMail($tieu_de, $view, $noi_dung));
 
         return response()->json([
@@ -612,4 +612,265 @@ class KhachHangController extends Controller
             'message' => 'Xóa người dùng thành công'
         ]);
     }
+
+    /**
+     * API: Lấy dữ liệu doanh thu 7 ngày gần nhất
+     */
+    public function getRevenueByDay()
+    {
+        $data = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $revenue = \App\Models\DonHang::whereDate('created_at', $date)
+                ->where('payment_status', 'paid')
+                ->sum('tong_tien');
+
+            $data[] = [
+                'date' => now()->subDays($i)->format('d/m'),
+                'revenue' => (int) $revenue
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * API: Lấy dữ liệu đơn hàng 7 ngày gần nhất
+     */
+    public function getOrdersByDay()
+    {
+        $data = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $count = \App\Models\DonHang::whereDate('created_at', $date)->count();
+
+            $data[] = [
+                'date' => now()->subDays($i)->format('d/m'),
+                'orders' => $count
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * API: Lấy thống kê trạng thái đơn hàng
+     */
+    public function getOrderStatusStats()
+    {
+        $statuses = [
+            'pending' => 'Chờ xử lý',
+            'confirmed' => 'Đã xác nhận',
+            'shipping' => 'Đang giao',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy'
+        ];
+
+        $data = [];
+        foreach ($statuses as $status => $label) {
+            $count = \App\Models\DonHang::where('status', $status)->count();
+            $data[] = [
+                'status' => $status,
+                'label' => $label,
+                'count' => $count
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * API: Lấy thống kê phương thức thanh toán
+     */
+    public function getPaymentMethodStats()
+    {
+        $methods = [
+            'cod' => 'Tiền mặt',
+            'mbbank' => 'MBBank',
+            'vnpay' => 'VNPay',
+            'momo' => 'MoMo'
+        ];
+
+        $data = [];
+        foreach ($methods as $method => $label) {
+            $count = \App\Models\DonHang::where('payment_method', $method)->count();
+            if ($count > 0) {
+                $data[] = [
+                    'method' => $method,
+                    'label' => $label,
+                    'count' => $count
+                ];
+            }
+        }
+
+        // Nếu không có dữ liệu, trả về danh sách mặc định với count = 0
+        if (empty($data)) {
+            foreach ($methods as $method => $label) {
+                $data[] = [
+                    'method' => $method,
+                    'label' => $label,
+                    'count' => 0
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * API: Lấy top sản phẩm bán chạy
+     */
+    public function getTopProducts()
+    {
+        $topProducts = \App\Models\ChiTietDonHang::select('id_san_pham', \DB::raw('COUNT(*) as total_sold'))
+            ->groupBy('id_san_pham')
+            ->orderByDesc('total_sold')
+            ->limit(5)
+            ->get();
+
+        $data = [];
+        foreach ($topProducts as $item) {
+            $product = \App\Models\SanPham::find($item->id_san_pham);
+            if ($product) {
+                $data[] = [
+                    'id' => $product->id,
+                    'name' => $product->ten_san_pham,
+                    'sales' => $item->total_sold
+                ];
+            }
+        }
+
+        // Nếu không đủ 5 sản phẩm, lấy thêm sản phẩm mới nhất
+        if (count($data) < 5) {
+            $existingIds = array_column($data, 'id');
+            $moreProducts = \App\Models\SanPham::whereNotIn('id', $existingIds)
+                ->orderByDesc('id')
+                ->limit(5 - count($data))
+                ->get();
+
+            foreach ($moreProducts as $product) {
+                $data[] = [
+                    'id' => $product->id,
+                    'name' => $product->ten_san_pham,
+                    'sales' => 0
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * API: Lấy tất cả dữ liệu biểu đồ dashboard (gọi 1 lần thay vì 5 lần)
+     */
+    public function getDashboardChartData()
+    {
+        // Revenue by day
+        $revenueData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $revenue = \App\Models\DonHang::whereDate('created_at', $date)
+                ->where('payment_status', 'paid')
+                ->sum('tong_tien');
+
+            $revenueData[] = [
+                'date' => now()->subDays($i)->format('d/m'),
+                'revenue' => (int) $revenue
+            ];
+        }
+
+        // Orders by day
+        $ordersData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $count = \App\Models\DonHang::whereDate('created_at', $date)->count();
+
+            $ordersData[] = [
+                'date' => now()->subDays($i)->format('d/m'),
+                'orders' => $count
+            ];
+        }
+
+        // Order status stats
+        $statuses = [
+            'pending' => 'Chờ xử lý',
+            'confirmed' => 'Đã xác nhận',
+            'shipping' => 'Đang giao',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy'
+        ];
+        $orderStatusData = [];
+        foreach ($statuses as $status => $label) {
+            $count = \App\Models\DonHang::where('status', $status)->count();
+            $orderStatusData[] = [
+                'status' => $status,
+                'label' => $label,
+                'count' => $count
+            ];
+        }
+
+        // Payment method stats
+        $methods = [
+            'cod' => 'Tiền mặt',
+            'mbbank' => 'MBBank',
+            'vnpay' => 'VNPay',
+            'momo' => 'MoMo'
+        ];
+        $paymentMethodData = [];
+        foreach ($methods as $method => $label) {
+            $count = \App\Models\DonHang::where('payment_method', $method)->count();
+            $paymentMethodData[] = [
+                'method' => $method,
+                'label' => $label,
+                'count' => $count
+            ];
+        }
+
+        // Top products
+        $topProducts = \App\Models\ChiTietDonHang::select('id_san_pham', \DB::raw('COUNT(*) as total_sold'))
+            ->groupBy('id_san_pham')
+            ->orderByDesc('total_sold')
+            ->limit(5)
+            ->get();
+
+        $topProductsData = [];
+        foreach ($topProducts as $item) {
+            $product = \App\Models\SanPham::find($item->id_san_pham);
+            if ($product) {
+                $topProductsData[] = [
+                    'id' => $product->id,
+                    'name' => $product->ten_san_pham,
+                    'sales' => $item->total_sold
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'revenue_by_day' => $revenueData,
+                'orders_by_day' => $ordersData,
+                'order_status' => $orderStatusData,
+                'payment_methods' => $paymentMethodData,
+                'top_products' => $topProductsData
+            ],
+            'last_updated' => now()->format('H:i:s d/m/Y')
+        ]);
+    }
 }
+

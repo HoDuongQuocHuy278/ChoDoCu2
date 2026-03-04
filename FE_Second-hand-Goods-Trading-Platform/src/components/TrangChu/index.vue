@@ -96,8 +96,7 @@
           </div>
           <div class="modal-body qr-body">
             <div class="qr-wrapper">
-              <!-- <img src="../../assets/images/qr.jpg" alt="QR Code" class="qr-image" /> -->
-              <div class="qr-placeholder" style="width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center;">QR Code</div>
+              <img src="../../assets/images/qr.jpg" alt="QR Code" class="qr-image" />
             </div>
             <p class="qr-text">Quét mã QR bằng camera điện thoại để tải ứng dụng</p>
           </div>
@@ -377,7 +376,7 @@ export default {
 
       try {
         //đổi api
-        const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || 'http://192.168.1.111:5000'
+        const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || 'http://192.168.1.61:5000'
         const res = await fetch(`${chatbotUrl}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
